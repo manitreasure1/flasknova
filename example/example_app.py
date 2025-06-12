@@ -1,7 +1,5 @@
-from flasknova import FlaskNova, NovaBlueprint
+from flasknova import FlaskNova, NovaBlueprint, status, Depend
 from pydantic import BaseModel
-from flasknova.status import status
-from flasknova.d_injection import Depend
 import asyncio
 
 
@@ -52,6 +50,6 @@ async def async_user(user=Depend(async_dep)):
 
 app.register_blueprint(api, url_prefix="/api")
 
-# if __name__ =='__main__':
-#     app.run(debug=True)
+if __name__ =='__main__':
+    app.run(debug=True)
 
