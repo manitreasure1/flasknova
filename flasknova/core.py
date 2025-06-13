@@ -2,13 +2,18 @@ from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g
 from typing import get_type_hints
 from pydantic import BaseModel, ValidationError
 import inspect
-from .exceptions import HTTPException, ResponseValidationError
-from .status import status
-from .d_injection import Depend
+from functools import wraps
+
+from flasknova.exceptions import HTTPException, ResponseValidationError
+from flasknova.status import status
+from flasknova.d_injection import Depend
+from flasknova.logger import get_flasknova_logger
 
 
+log = get_flasknova_logger()
 
-async def _bind_route_parameters(func, sig, type_hints):
+
+async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
     bound_values = {}
     for name, param in sig.parameters.items():
@@ -37,11 +42,22 @@ async def _bind_route_parameters(func, sig, type_hints):
 
 def _serialize_response(result, response_model, request):
     if response_model:
+        log.info(f"core repsonse model ----------{response_model}")
+
         try:
             if isinstance(result, response_model):
                 model_instance = result
             else:
-                model_instance = response_model(**result)
+                if isinstance(result, tuple):
+                    data = result[0]
+                else:
+                    data = result
+                if isinstance(data, response_model):
+                    model_instance = data
+                elif isinstance(data, BaseModel):
+                    model_instance = response_model(**data.model_dump())
+                else:
+                    model_instance = response_model(**data)
             return jsonify(model_instance.model_dump())
         except ValidationError as e:
             raise HTTPException(
@@ -70,8 +86,7 @@ class FlaskNova(_Flask):
         }
         return jsonify(problem), error.status_code
 
-    def route(self, rule, *, methods=["GET"], tags=None, response_model=None, **options):
-
+    def route(self, rule, *, methods=["GET"], tags=None, response_model=None, **options):        
         def decorator(func):
             is_async = inspect.iscoroutinefunction(func)
             sig = inspect.signature(func)
@@ -79,6 +94,7 @@ class FlaskNova(_Flask):
             func._flasknova_tags = tags or []
             func._flasknova_response_model = response_model
 
+            @wraps(func)
             async def wrapper(*args, **kwargs):
                 bound_values = await _bind_route_parameters(func, sig, type_hints)
                 if isinstance(bound_values, tuple):
@@ -90,6 +106,7 @@ class FlaskNova(_Flask):
                         result = func(**bound_values)
                 except HTTPException as e:
                     raise
+                log.info(response_model)
                 return _serialize_response(result, response_model, request)
 
             # Filter out custom keys before passing to Flask’s add_url_rule()
@@ -129,6 +146,10 @@ class NovaBlueprint(_Blueprint):
         - methods, tags,
         - response_model 
         """
+
+        # log.debug(f"core repsonse model Nova Bl ----------{response_model}")
+        # log.debug(f"core Tags ----------{tags}")
+
         
         def decorator(func):
             is_async = inspect.iscoroutinefunction(func)
@@ -137,7 +158,10 @@ class NovaBlueprint(_Blueprint):
 
             func._flasknova_tags = tags or []
             func._flasknova_response_model = response_model
+            log.debug(f"Setting func._flasknova_tags = {tags or []}")
+            log.debug(f"Setting {rule} func._flasknova_response_model = {response_model}")
 
+            @wraps(func)
             async def wrapper(*args, **kwargs):
                 bound_values = await _bind_route_parameters(func, sig, type_hints)
                 if isinstance(bound_values, tuple):
