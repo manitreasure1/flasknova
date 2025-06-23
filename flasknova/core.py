@@ -29,36 +29,63 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
                 else:
                     g._nova_deps[dep_func] = dep_func()
             bound_values[name] = g._nova_deps[dep_func]
+
         elif annotation and issubclass(annotation, BaseModel):
             try:
                 json_data = request.get_json(force=True)
                 bound_values[name] = annotation(**json_data)
             except ValidationError as e:
                 raise ResponseValidationError(detail=str(e), original_exception=e, instance=request.full_path)      
+        elif annotation in (int, str, float, bool, dict, list):
+            value = request.view_args.get(name) if request.view_args and name in request.view_args else None
+            if value is None:
+                json_data = request.get_json(silent=True) or {}
+                value = json_data.get(name, default if default is not inspect.Parameter.empty else None)
+            try:
+                if value is not None and annotation is not None:
+                    if annotation is bool:
+                        value = value if isinstance(value, bool) else str(value).lower() in ("true", "1", "yes", "on")
+                    else:
+                        value = annotation(value)
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"Parameter '{name}' must be of type {annotation.__name__}")
+            bound_values[name] = value
         else:
             bound_values[name] = request
     return bound_values
 
 
+from typing import get_origin, get_args
+
 def _serialize_response(result, response_model, request):
     if response_model:
-        log.info(f"core repsonse model ----------{response_model}")
-
         try:
-            if isinstance(result, response_model):
-                model_instance = result
-            else:
-                if isinstance(result, tuple):
-                    data = result[0]
+            origin = get_origin(response_model)
+            args = get_args(response_model)
+            # Handle List[Model] and similar generics
+            if origin is list and args and isinstance(result, list):
+                model = args[0]
+                return jsonify([
+                    item.model_dump() if isinstance(item, BaseModel) else item for item in result
+                ])
+            # Only use isinstance and model instantiation for non-generic types
+            if origin is None and isinstance(response_model, type):
+                if isinstance(result, response_model):
+                    model_instance = result
                 else:
-                    data = result
-                if isinstance(data, response_model):
-                    model_instance = data
-                elif isinstance(data, BaseModel):
-                    model_instance = response_model(**data.model_dump())
-                else:
-                    model_instance = response_model(**data)
-            return jsonify(model_instance.model_dump())
+                    if isinstance(result, tuple):
+                        data = result[0]
+                    else:
+                        data = result
+                    if isinstance(data, response_model):
+                        model_instance = data
+                    elif isinstance(data, BaseModel):
+                        model_instance = response_model(**data.model_dump())
+                    else:
+                        model_instance = response_model(**data)
+                return jsonify(model_instance.model_dump())
+            # If not a model or list, just jsonify the result
+            return jsonify(result)
         except ValidationError as e:
             raise HTTPException(
                 status_code=status.INTERNAL_SERVER_ERROR,
@@ -68,6 +95,8 @@ def _serialize_response(result, response_model, request):
             )
     if isinstance(result, BaseModel):
         return jsonify(result.model_dump())
+    elif isinstance(result, (dict, list)):
+        return jsonify(result)
     return result
 
 
@@ -98,7 +127,7 @@ class FlaskNova(_Flask):
             async def wrapper(*args, **kwargs):
                 bound_values = await _bind_route_parameters(func, sig, type_hints)
                 if isinstance(bound_values, tuple):
-                    return bound_values  # error response from _bind_route_parameters
+                    return bound_values 
                 try:
                     if is_async:
                         result = await func(**bound_values)
@@ -106,7 +135,7 @@ class FlaskNova(_Flask):
                         result = func(**bound_values)
                 except HTTPException as e:
                     raise
-                log.info(response_model)
+                
                 return _serialize_response(result, response_model, request)
 
             # Filter out custom keys before passing to Flask’s add_url_rule()
@@ -125,7 +154,6 @@ class FlaskNova(_Flask):
                 func.__dict__.pop("response_model", None)
                 func.__dict__.pop("tags", None)
 
-            # Finally register the route on this blueprint
             self.add_url_rule(rule,
                               endpoint=func.__name__,
                               view_func=wrapper,
@@ -134,9 +162,6 @@ class FlaskNova(_Flask):
             return func
 
         return decorator
-
-
-
 
 
 class NovaBlueprint(_Blueprint):
@@ -158,8 +183,6 @@ class NovaBlueprint(_Blueprint):
 
             func._flasknova_tags = tags or []
             func._flasknova_response_model = response_model
-            log.debug(f"Setting func._flasknova_tags = {tags or []}")
-            log.debug(f"Setting {rule} func._flasknova_response_model = {response_model}")
 
             @wraps(func)
             async def wrapper(*args, **kwargs):
