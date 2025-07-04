@@ -29,7 +29,7 @@ def list_engineers():
     response = make_response(jsonify(engineers_list), status.OK)
     return response
 
-@bp.route('/engineers', methods=['POST'], response_model=EngineerOut, tags=["Engineers"], status=status.CREATED)
+@bp.route('/engineers', methods=['POST'], response_model=EngineerOut, tags=["Engineers"])
 def create_engineer(data: EngineerIn):
     global engineer_id_counter
     engineer = EngineerOut(id=engineer_id_counter, **data.model_dump())
