@@ -1,16 +1,12 @@
-from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g
-from typing import get_type_hints
-from pydantic import BaseModel, ValidationError
-import inspect
-from functools import wraps
-
+from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g, make_response
 from flasknova.exceptions import HTTPException, ResponseValidationError
-from flasknova.status import status
+from typing import get_type_hints, get_origin, get_args
+from pydantic import BaseModel, ValidationError
 from flasknova.d_injection import Depend
-from flasknova.logger import get_flasknova_logger
-
-
-log = get_flasknova_logger()
+from flasknova.status import status
+from functools import wraps
+import dataclasses
+import inspect
 
 
 async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
@@ -35,7 +31,13 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
                 json_data = request.get_json(force=True)
                 bound_values[name] = annotation(**json_data)
             except ValidationError as e:
-                raise ResponseValidationError(detail=str(e), original_exception=e, instance=request.full_path)      
+                raise ResponseValidationError(detail=str(e), original_exception=e, instance=request.full_path)
+        elif annotation and hasattr(annotation, '__init__') and annotation not in (str, int, float, bool, dict, list):
+            try:
+                json_data = request.get_json(force=True)
+                bound_values[name] = annotation(**json_data)
+            except Exception as e:
+                raise ResponseValidationError(detail=f"Custom model binding failed: {e}", original_exception=e, instance=request.full_path)
         elif annotation in (int, str, float, bool, dict, list):
             value = request.view_args.get(name) if request.view_args and name in request.view_args else None
             if value is None:
@@ -55,37 +57,72 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
     return bound_values
 
 
-from typing import get_origin, get_args
+def extract_status_code(data, default=200):
+    """Extract status code from tuple or enum, or return default."""
+    if isinstance(data, tuple):
+        possible_status = data[1] if len(data) > 1 else default
+        if not isinstance(possible_status, int) and hasattr(possible_status, 'value') and isinstance(getattr(possible_status, 'value', None), int):
+            return possible_status.value
+        elif isinstance(possible_status, int):
+            return possible_status
+    return default
 
-def _serialize_response(result, response_model, request):
+def extract_data(data):
+    """Extract main data from tuple or return as is."""
+    return data[0] if isinstance(data, tuple) else data
+
+def _serialize_response(result, response_model, request):    
+    def serialize_item(item):
+        if isinstance(item, tuple):
+            return serialize_item(item[0])
+        elif isinstance(item, (str, bytes)):
+            return item
+        elif hasattr(item, 'model_dump'):
+            return item.model_dump()
+        elif hasattr(item, 'dict'):
+            return item.dict()
+        elif hasattr(item, 'dump'):
+            return item.dump()
+        elif dataclasses.is_dataclass(item) and not isinstance(item, type):
+            return dataclasses.asdict(item)
+        elif hasattr(item, 'to_dict') and callable(getattr(item, 'to_dict', None)):
+            return item.to_dict() #type: ignore
+        elif isinstance(item, dict):
+            return item
+        raise TypeError(f"Cannot serialize object of type {type(item)}")
+
+    # If the result is already a Flask Response (e.g., from make_response), return as is
+    if hasattr(result, 'is_streamed') and callable(getattr(result, 'get_data', None)):
+        return result
+
     if response_model:
         try:
             origin = get_origin(response_model)
             args = get_args(response_model)
-            # Handle List[Model] and similar generics
-            if origin is list and args and isinstance(result, list):
-                model = args[0]
-                return jsonify([
-                    item.model_dump() if isinstance(item, BaseModel) else item for item in result
-                ])
-            # Only use isinstance and model instantiation for non-generic types
-            if origin is None and isinstance(response_model, type):
-                if isinstance(result, response_model):
-                    model_instance = result
+            if origin is list and args:
+                data = extract_data(result)
+                status_code = extract_status_code(result)
+                data = list(data) if not isinstance(data, list) else data
+                return make_response(jsonify([serialize_item(item) for item in data]), status_code)
+            elif origin is tuple and args:
+                data = extract_data(result)
+                status_code = extract_status_code(result)
+                if not isinstance(data, tuple):
+                    data = (data,)
+                return make_response(jsonify([serialize_item(item) for item in data]), status_code)
+
+            elif origin is None and isinstance(response_model, type):
+                data = extract_data(result)
+                status_code = extract_status_code(result)
+                if isinstance(data, response_model):
+                    model_instance = data
+                elif isinstance(data, BaseModel):
+                    model_instance = response_model(**data.model_dump())
                 else:
-                    if isinstance(result, tuple):
-                        data = result[0]
-                    else:
-                        data = result
-                    if isinstance(data, response_model):
-                        model_instance = data
-                    elif isinstance(data, BaseModel):
-                        model_instance = response_model(**data.model_dump())
-                    else:
-                        model_instance = response_model(**data)
-                return jsonify(model_instance.model_dump())
+                    model_instance = response_model(**data)
+                return make_response(jsonify(serialize_item(model_instance)), status_code)
             # If not a model or list, just jsonify the result
-            return jsonify(result)
+            return make_response(jsonify(result), 200)
         except ValidationError as e:
             raise HTTPException(
                 status_code=status.INTERNAL_SERVER_ERROR,
@@ -93,11 +130,12 @@ def _serialize_response(result, response_model, request):
                 title="Response Validation Error",
                 instance=request.full_path
             )
-    if isinstance(result, BaseModel):
-        return jsonify(result.model_dump())
-    elif isinstance(result, (dict, list)):
-        return jsonify(result)
-    return result
+    # Fallback serialization for result
+    if isinstance(result, tuple):
+        data = extract_data(result)
+        status_code = extract_status_code(result)
+        return make_response(jsonify(serialize_item(data)), status_code)
+    return make_response(jsonify(serialize_item(result)), 200) if not isinstance(result, (str, bytes)) else result
 
 
 class FlaskNova(_Flask):
@@ -134,8 +172,7 @@ class FlaskNova(_Flask):
                     else:
                         result = func(**bound_values)
                 except HTTPException as e:
-                    raise
-                
+                    raise                
                 return _serialize_response(result, response_model, request)
 
             # Filter out custom keys before passing to Flask’s add_url_rule()
@@ -172,10 +209,6 @@ class NovaBlueprint(_Blueprint):
         - response_model 
         """
 
-        # log.debug(f"core repsonse model Nova Bl ----------{response_model}")
-        # log.debug(f"core Tags ----------{tags}")
-
-        
         def decorator(func):
             is_async = inspect.iscoroutinefunction(func)
             sig = inspect.signature(func)
@@ -223,3 +256,6 @@ class NovaBlueprint(_Blueprint):
             return func
 
         return decorator
+
+
+
