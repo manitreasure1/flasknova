@@ -1,9 +1,8 @@
-from typing import List, Tuple
-from flask import request
+from typing import List
 from flasknova import FlaskNova, NovaBlueprint, status, get_flasknova_logger
 from pydantic import BaseModel
 import dataclasses
-
+from example.security_auth import jwt_required
 
 log =get_flasknova_logger()
 # Pydantic model
@@ -18,10 +17,10 @@ class CustomUser:
     name: str
     email: str
 
-    def __init__(self, id: int, name: str, email: str):
-        self.id = id
-        self.name = name
-        self.email = email
+    # def __init__(self, id: int, name: str, email: str):
+    #     self.id = id
+    #     self.name = name
+    #     self.email = email
 
     def to_dict(self):
         return {"id": self.id, "name": self.name, "email": self.email}

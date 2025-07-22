@@ -1,10 +1,10 @@
 """
 Simple CRUD with custom JWT authentication using FlaskNova (no flask_jwt_extended)
 """
-from flask import g, request
+from flask import g, request, make_response, jsonify
 from flasknova import status
 import time, hmac, hashlib, base64, json
-
+from functools import wraps
 SECRET = 'supersecretjwtkey'
 
 # JWT helpers
@@ -30,7 +30,10 @@ def decode_jwt(token, secret=SECRET):
     except Exception:
         return None
 
+
+
 def jwt_required(f):
+    @wraps(f)
     def wrapper(*args, **kwargs):
         auth = request.headers.get('Authorization', '')
         if not auth.startswith('Bearer '):
@@ -38,8 +41,8 @@ def jwt_required(f):
         token = auth.split(' ', 1)[1]
         payload = decode_jwt(token)
         if not payload:
-            return {"msg": "Invalid or expired token"}, status.UNAUTHORIZED
+            return make_response(jsonify({"msg": "Invalid or expired token"}), status.UNAUTHORIZED)
         g.user = payload['sub']
         return f(*args, **kwargs)
-    wrapper.__name__ = f.__name__
     return wrapper
+

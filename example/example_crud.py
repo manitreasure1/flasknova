@@ -75,4 +75,5 @@ def delete_engineer(engineer_id: int):
 app.register_blueprint(bp, url_prefix="/api")
 
 if __name__=='__main__':
+    app.setup_swagger()
     app.run(debug=True)

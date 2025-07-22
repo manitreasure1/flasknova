@@ -1,13 +1,17 @@
 from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g, make_response
 from flasknova.exceptions import HTTPException, ResponseValidationError
-from typing import get_type_hints, get_origin, get_args
+from typing import get_type_hints, get_origin, get_args, Literal, Optional
 from pydantic import BaseModel, ValidationError
 from flasknova.d_injection import Depend
 from flasknova.status import status
+from flasknova.swagger import create_swagger_blueprint
+from flasknova.logger import get_flasknova_logger
 from functools import wraps
 import dataclasses
 import inspect
 
+Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
+logger = get_flasknova_logger()
 
 async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
@@ -143,6 +147,27 @@ class FlaskNova(_Flask):
         super().__init__(import_name)
         self.register_error_handler(HTTPException, self._handle_http_exception)
 
+    
+    def setup_swagger(self, info:Optional[dict]=None):
+        self._flasknova_openapi_info = info or {}
+        
+        swagger_enabled = self.config.get("FLASKNOVA_SWAGGER_ENABLED", True)
+        docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
+
+        if not swagger_enabled:
+            return
+        swagger_bp = create_swagger_blueprint(docs_route=docs_path)
+        self.register_blueprint(swagger_bp)
+
+        @self.after_request
+        def add_swagger_cache_headers(response):
+            if request.path.startswith(docs_path):
+                if response.mimetype in ['text/css', 'application/javascript']:
+                    response.headers['Cache-Control'] = 'public, max-age=86400'
+                else:
+                    response.headers['Cache-Control'] = 'no-store'
+            return response
+
     def _handle_http_exception(self, error: HTTPException):
         problem = {
             "type": error.type,
@@ -153,13 +178,26 @@ class FlaskNova(_Flask):
         }
         return jsonify(problem), error.status_code
 
-    def route(self, rule, *, methods=["GET"], tags=None, response_model=None, **options):        
+    def route(
+            self,
+            rule: str,
+            *,
+            methods: list[Method] = ["GET"],
+            tags: list[str] | None = None,
+            response_model: type | None = None,
+            summary: str | None = None,
+            description: str | None = None,
+            **options
+        ):      
         def decorator(func):
             is_async = inspect.iscoroutinefunction(func)
             sig = inspect.signature(func)
             type_hints = get_type_hints(func)
+            
             func._flasknova_tags = tags or []
             func._flasknova_response_model = response_model
+            func._flasknova_summary = summary
+            func._flasknova_description = description
 
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -202,7 +240,17 @@ class FlaskNova(_Flask):
 
 
 class NovaBlueprint(_Blueprint):
-    def route(self, rule, *, methods=["GET"], tags=None, response_model=None, **options):
+    def route(
+            self,
+            rule: str,
+            *,
+            methods: list[Method] = ["GET"],
+            tags: list[str] | None = None,
+            response_model: type | None = None,
+            summary: str | None = None,
+            description: str | None = None,
+            **options
+        ):  
         """
         A Blueprint-style .route() that accepts:
         - methods, tags,
@@ -216,6 +264,8 @@ class NovaBlueprint(_Blueprint):
 
             func._flasknova_tags = tags or []
             func._flasknova_response_model = response_model
+            func._flasknova_summary = summary
+            func._flasknova_description = description
 
             @wraps(func)
             async def wrapper(*args, **kwargs):

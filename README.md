@@ -1,22 +1,31 @@
+
 <p align="center">
   <img src="https://img.shields.io/pypi/v/flasknova.svg?color=blue" alt="PyPI version">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/Swagger%20UI-Auto-blueviolet" alt="Swagger UI">
 </p>
 
+
 # FlaskNova
 
-[GitHub Repository](https://github.com/treasureman/flasknova)
+**A modern and lightweight extension for Flask that brings FastAPI-style features like automatic OpenAPI schema, Swagger UI, request validation, typed routing, and structured responses.**
 
-FlaskNova is a Flask extension that brings modern API development features to Flask, including:
+---
 
-- **Schema validation** using [Pydantic](https://pydantic-docs.helpmanual.io/) for request and response data
-- **Dependency injection** for clean, testable route logic
-- **Custom status codes** via a `status` module
-- **Custom HTTP exceptions** for robust error handling
-- **Unified logging**
+## 🚀 Features
 
-
+* ✅ Automatic OpenAPI 3.0 schema generation
+* ✅ Built-in Swagger UI at `/docs` (configurable)
+* ✅ Request validation using Pydantic models
+* ✅ Response model serialization (Pydantic, dataclass, or custom class with `to_dict`)
+* ✅ Docstring-based or keyword-based `summary` and `description` for endpoints
+* ✅ Typed URL parameters (`<int:id>`, `<uuid:id>`, etc.)
+* ✅ Customizable Swagger UI route path and OpenAPI metadata
+* ✅ Configurable via `FLASKNOVA_SWAGGER_ENABLED` and `FLASKNOVA_SWAGGER_ROUTE`
+* ✅ Clean modular routing with `NovaBlueprint`
+* ✅ Built-in HTTP status codes (`flasknova.status`)
+* ✅ Optional JWT auth and dependency injection helpers
+* ✅ Minimal boilerplate and highly extensible
 
 ---
 
@@ -70,7 +79,7 @@ FlaskNova is ideal for teams and solo developers who want the power of modern Py
 ## Installation
 
 ```bash
-pip install flasknova 
+pip install flask-nova 
 ```
 
 
@@ -79,32 +88,142 @@ pip install flasknova
 ## Quick Example
 
 
-### Pydantic Example
+
 ```python
-from flasknova import FlaskNova, NovaBlueprint, status, HTTPException
+from flasknova import FlaskNova, NovaBlueprint, status
 from pydantic import BaseModel
 
 app = FlaskNova(__name__)
-api = NovaBlueprint('api', __name__)
+api = NovaBlueprint("api", __name__)
 
-class UserSchema(BaseModel):
+class User(BaseModel):
     username: str
-    age: int
+    email: str
 
-users = {}
-
-@api.route('/pyduser', methods=['POST'], response_model=UserSchema)
-def create_pyduser(data: UserSchema):
-    users[data.username] = data
+@api.route("/users", methods=["POST"], response_model=User, summary="Create a new user", description="Accepts user data and returns the created user.")
+def create_user(data: User):
     return data, status.CREATED
 
-@api.route('/pyduser/<string:username>', methods=['GET'], response_model=UserSchema)
-def get_pyduser(username: str):
-    user = users.get(username)
-    if not user:
-        raise HTTPException(status_code=status.NOT_FOUND, detail="User not found", title="Not Found")
-    return user
+app.register_blueprint(api)
+
+if __name__ == "__main__":
+    app.setup_swagger()
+    app.run(debug=True)
 ```
+
+Go to [http://localhost:5000/docs](http://localhost:5000/docs) to try it out in Swagger UI.
+
+---
+
+## 📝 Route Documentation Options
+
+You can describe endpoints in two ways:
+
+### ✅ Using `summary` and `description` keyword arguments:
+
+```python
+@api.route("/hello", summary="Say hello", description="Returns a greeting message.")
+def hello():
+    return {"msg": "Hello!"}
+```
+
+### ✅ Or using a docstring:
+
+```python
+@api.route("/hello")
+def hello():
+    """Say hello.
+
+    Returns a greeting message to the user.
+    """
+    return {"msg": "Hello!"}
+```
+
+If both are provided, FlaskNova prefers `summary` and `description`, falling back to the docstring if missing.
+
+---
+
+## 🔀 Typed URL Parameters
+
+Use Flask-style parameters with automatic OpenAPI type mapping:
+
+```python
+@api.route("/users/<int:user_id>", methods=["GET"])
+def get_user(user_id: int):
+    ...
+```
+
+Supported converters: `int`, `float`, `uuid`, `path`, `string` (default).
+
+---
+
+## 🧪 Enabling Swagger UI
+
+FlaskNova automatically mounts Swagger UI when `app.setup_swagger()` is called:
+
+```python
+if __name__ == "__main__":
+    app.setup_swagger()
+    app.run(debug=True)
+```
+
+### 🔧 Environment Configuration
+
+You can control Swagger UI using environment variables:
+
+| Variable                    | Default | Description                                 |
+| --------------------------- | ------- | ------------------------------------------- |
+| `FLASKNOVA_SWAGGER_ENABLED` | `True`  | Disable Swagger UI entirely if set to False |
+| `FLASKNOVA_SWAGGER_ROUTE`   | `/docs` | Change the Swagger UI mount path            |
+
+Example using a `.env` file:
+
+```
+FLASKNOVA_SWAGGER_ENABLED=True
+FLASKNOVA_SWAGGER_ROUTE=/api/docs
+```
+
+### 🛠️ Customizing OpenAPI Metadata
+
+You can also pass metadata via `setup_swagger()`:
+
+```python
+app.setup_swagger(
+    mount_path="/docs",
+    openapi_url="/openapi.json",
+    info={
+        "title": "My API",
+        "version": "2.0.1",
+        "description": "Modern Flask API.",
+        "contact": {"name": "Dev Team", "email": "hello@example.com"},
+        "license": {"name": "MIT", "url": "https://opensource.org/licenses/MIT"}
+    }
+)
+```
+
+---
+
+## 🔁 Response Models
+
+Supported response types:
+
+* ✅ Pydantic models
+* ✅ Dataclasses
+* ✅ Custom classes (must implement `to_dict()` or `dict()`)
+
+```python
+@dataclasses.dataclass
+class User:
+    id: int
+    name: str
+
+@api.route("/me", response_model=User)
+def get_profile():
+    return {"id"=1, "name"="nova"}
+```
+
+---
+
 
 ```python
 from typing import List
@@ -114,8 +233,6 @@ def list_pydusers():
 
 app.register_blueprint(api)
 
-if __name__ == "__main__":
-    app.run(debug=True)
 ```
 
 ### Custom Class Example (with Type Hints)
@@ -131,10 +248,6 @@ class CustomUser:
     name: str
     email: str
 
-    def __init__(self, id: int, name: str, email: str):
-        self.id = id
-        self.name = name
-        self.email = email
     def to_dict(self):
         return {"id": self.id, "name": self.name, "email": self.email}
 
@@ -161,8 +274,7 @@ def list_customusers():
 
 app.register_blueprint(api)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
 ```
 
 ### Dataclass Example
@@ -202,8 +314,6 @@ def list_dcusers():
 
 app.register_blueprint(api)
 
-if __name__ == "__main__":
-    app.run(debug=True)
 ```
 
 
@@ -242,9 +352,6 @@ raise HTTPException(
 
 ---
 
-## OpenAPI & Swagger UI
-
-FlaskNova automatically generates an OpenAPI 3.0 schema for your app and serves interactive Swagger UI at `/flasknova/docs`.
 
 **Supported request/response types:**
 
@@ -314,40 +421,16 @@ logger.info("FlaskNova app started!")
 
 ---
 
-## Learn More
-
-If you are new to Flask or want to learn more about the core framework, visit the official Flask documentation: [https://flask.palletsprojects.com/](https://flask.palletsprojects.com/)
 
 
 
-
----
-
-## License
-
-MIT License
-
----
-
-## Contributing
-
-Contributions are welcome! To get started:
-
-- Fork the repository and create your branch from `main`.
-- Ensure your code is well-tested and follows the existing style.
-- If adding a feature or fixing a bug, please include tests and update documentation as needed.
-- Open a pull request with a clear description of your changes.
-
-For questions, suggestions, or bug reports, please open an issue on [GitHub](https://github.com/treasureman/flasknova/issues).
-
----
 
 ## FAQ
 
 <details>
 <summary><strong>Why don't my custom class fields appear in Swagger UI?</strong></summary>
 
-You must add class-level type hints (not just in `__init__`). Example:
+You must add class-level type hints . Example:
 ```python
 class MyCustom:
     id: int
@@ -409,3 +492,31 @@ FlaskNova is designed to be flexible and production-ready. Here are some ways yo
 If you use FlaskNova in your project, consider sharing your experience or opening a PR to add your project to this showcase!
 
 </details>
+
+
+
+## 📖 Learn More
+
+* [Flask Documentation](https://flask.palletsprojects.com/)
+* [Pydantic Docs](https://docs.pydantic.dev/)
+
+---
+
+## 📚 License
+
+MIT License
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+* Fork the repo, create your branch from `main`
+* Write tests and keep code clean
+* Open a PR with a clear explanation
+
+Open issues or feature requests on [GitHub](https://github.com/treasureman/flasknova/issues).
+
+---
+
