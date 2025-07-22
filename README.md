@@ -1,4 +1,5 @@
 
+![Publish to PyPI](https://github.com/manitreasure1/flasknova/actions/workflows/publish.yml/badge.svg)
 <p align="center">
   <img src="https://img.shields.io/pypi/v/flasknova.svg?color=blue" alt="PyPI version">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
@@ -520,3 +521,9 @@ Open issues or feature requests on [GitHub](https://github.com/treasureman/flask
 
 ---
 
+## 📦 PyPI Release
+
+The latest version is available here:
+
+🔗 [FlaskNova on PyPI](https://pypi.org/project/flask-nova/)  
+🔗 [GitHub Release Notes](https://github.com/manitreasure1/flasknova/releases)
