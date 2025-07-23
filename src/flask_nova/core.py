@@ -1,11 +1,11 @@
 from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g, make_response
-from flasknova.exceptions import HTTPException, ResponseValidationError
+from flask_nova.exceptions import HTTPException, ResponseValidationError
 from typing import get_type_hints, get_origin, get_args, Literal, Optional
 from pydantic import BaseModel, ValidationError
-from flasknova.d_injection import Depend
-from flasknova.status import status
-from flasknova.swagger import create_swagger_blueprint
-from flasknova.logger import get_flasknova_logger
+from flask_nova.d_injection import Depend
+from flask_nova.status import status
+from flask_nova.swagger import create_swagger_blueprint
+from flask_nova.logger import get_flasknova_logger
 from functools import wraps
 import dataclasses
 import inspect

@@ -1,4 +1,4 @@
-from flasknova import FlaskNova
+from src.flask_nova import FlaskNova
 
 app = FlaskNova(__name__)
 

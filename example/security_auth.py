@@ -2,7 +2,7 @@
 Simple CRUD with custom JWT authentication using FlaskNova (no flask_jwt_extended)
 """
 from flask import g, request, make_response, jsonify
-from flasknova import status
+from src.flask_nova import status
 import time, hmac, hashlib, base64, json
 from functools import wraps
 SECRET = 'supersecretjwtkey'

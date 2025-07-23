@@ -1,4 +1,4 @@
-from flasknova import FlaskNova, NovaBlueprint, status, logger
+from src.flask_nova import FlaskNova, NovaBlueprint, status, logger
 from pydantic import BaseModel
 import time
 from example.security_auth import encode_jwt, jwt_required

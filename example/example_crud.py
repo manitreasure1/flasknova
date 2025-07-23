@@ -1,6 +1,6 @@
 from typing import List
 from flask import jsonify, make_response
-from flasknova import FlaskNova, NovaBlueprint, status, HTTPException, get_flasknova_logger
+from src.flask_nova import FlaskNova, NovaBlueprint, status, HTTPException, get_flasknova_logger
 from pydantic import BaseModel
 
 log = get_flasknova_logger()

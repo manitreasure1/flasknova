@@ -1,11 +1,11 @@
-from flasknova.logger import get_flasknova_logger
+from flask_nova.logger import get_flasknova_logger
 from typing import get_type_hints
 from flask import Flask
 import dataclasses
 import pydantic
 import inspect
 import re
-from flasknova.d_injection import Depend
+from flask_nova.d_injection import Depend
 
 FLASK_TO_OPENAPI_TYPES = {
     "string": ("string", None),

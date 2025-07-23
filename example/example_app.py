@@ -1,4 +1,4 @@
-from flasknova import FlaskNova, NovaBlueprint, status, Depend
+from src.flask_nova import FlaskNova, NovaBlueprint, status, Depend
 from pydantic import BaseModel
 import asyncio
 

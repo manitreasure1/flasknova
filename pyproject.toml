@@ -1,5 +1,5 @@
 [project]
-name = "flasknova"
+name = "flask-nova"
 version = "0.1.0"
 description = "Extra check using pydandic in flask application"
 authors = [
@@ -13,6 +13,10 @@ dependencies = [
     "pydantic==2.11.5"
 ]
 
+
+
+[tool.poetry]
+packages = [{include = "flask_nova", from = "src"}] 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

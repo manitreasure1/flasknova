@@ -1,8 +1,7 @@
 from typing import List
-from flasknova import FlaskNova, NovaBlueprint, status, get_flasknova_logger
+from src.flask_nova import FlaskNova, NovaBlueprint, status, get_flasknova_logger
 from pydantic import BaseModel
 import dataclasses
-from example.security_auth import jwt_required
 
 log =get_flasknova_logger()
 # Pydantic model

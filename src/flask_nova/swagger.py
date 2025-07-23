@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, render_template_string, current_app, url_for
-from flasknova.openapi import generate_openapi
+from flask_nova.openapi import generate_openapi
 
 def create_swagger_blueprint(docs_route="/doc"):
     swagger_bp = Blueprint("swagger", __name__)
