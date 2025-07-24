@@ -1,9 +1,12 @@
 name: Publish to PyPI
 
 on:
+  push:
+    tags:
+      - 'v*.*.*'
   release:
-    types: [created]  # Runs when a GitHub Release is created
-  workflow_dispatch:   # Allows manual triggering from GitHub UI
+    types: [created]
+  workflow_dispatch:
 
 jobs:
   deploy:

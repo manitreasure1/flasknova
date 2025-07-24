@@ -1,8 +1,8 @@
 from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g, make_response
 from flask_nova.exceptions import HTTPException, ResponseValidationError
-from typing import get_type_hints, get_origin, get_args, Literal, Optional
+from typing import get_type_hints, get_origin, get_args, Literal, Optional, Annotated
 from pydantic import BaseModel, ValidationError
-from flask_nova.d_injection import Depend
+from flask_nova.d_injection import Depend, resolve_dependencies
 from flask_nova.status import status
 from flask_nova.swagger import create_swagger_blueprint
 from flask_nova.logger import get_flasknova_logger
@@ -13,14 +13,26 @@ import inspect
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 logger = get_flasknova_logger()
 
+
+def resolve_annotation(annotation):
+    if get_origin(annotation) is Annotated:
+        base_type, *extras = get_args(annotation)
+        for extra in extras:
+            if isinstance(extra, Depend):
+                return base_type, extra
+        return base_type, None
+    return annotation, None
+
+
 async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
     bound_values = {}
     for name, param in sig.parameters.items():
         annotation = type_hints.get(name)
+        base_type, dependency = resolve_annotation(annotation)
         default = param.default
         if isinstance(default, Depend):
-            dep_func = default.dependency
+            dep_func = (dependency or default).dependency
             if not hasattr(g, "_nova_deps"):
                 g._nova_deps = {}
             if dep_func not in g._nova_deps:
@@ -30,31 +42,31 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
                     g._nova_deps[dep_func] = dep_func()
             bound_values[name] = g._nova_deps[dep_func]
 
-        elif annotation and issubclass(annotation, BaseModel):
+        elif base_type and isinstance(base_type, type) and issubclass(annotation, BaseModel):
             try:
                 json_data = request.get_json(force=True)
                 bound_values[name] = annotation(**json_data)
             except ValidationError as e:
                 raise ResponseValidationError(detail=str(e), original_exception=e, instance=request.full_path)
-        elif annotation and hasattr(annotation, '__init__') and annotation not in (str, int, float, bool, dict, list):
+        elif base_type and hasattr(annotation, '__init__') and annotation not in (str, int, float, bool, dict, list):
             try:
                 json_data = request.get_json(force=True)
                 bound_values[name] = annotation(**json_data)
             except Exception as e:
                 raise ResponseValidationError(detail=f"Custom model binding failed: {e}", original_exception=e, instance=request.full_path)
-        elif annotation in (int, str, float, bool, dict, list):
+        elif base_type in (int, str, float, bool, dict, list):
             value = request.view_args.get(name) if request.view_args and name in request.view_args else None
             if value is None:
                 json_data = request.get_json(silent=True) or {}
                 value = json_data.get(name, default if default is not inspect.Parameter.empty else None)
             try:
-                if value is not None and annotation is not None:
+                if value is not None and base_type is not None:
                     if annotation is bool:
                         value = value if isinstance(value, bool) else str(value).lower() in ("true", "1", "yes", "on")
                     else:
                         value = annotation(value)
             except Exception:
-                raise HTTPException(status_code=400, detail=f"Parameter '{name}' must be of type {annotation.__name__}")
+                raise HTTPException(status_code=400, detail=f"Parameter '{name}' must be of type {base_type.__name__}")
             bound_values[name] = value
         else:
             bound_values[name] = request
@@ -142,6 +154,7 @@ def _serialize_response(result, response_model, request):
     return make_response(jsonify(serialize_item(result)), 200) if not isinstance(result, (str, bytes)) else result
 
 
+
 class FlaskNova(_Flask):
     def __init__(self, import_name):
         super().__init__(import_name)
@@ -194,21 +207,23 @@ class FlaskNova(_Flask):
             sig = inspect.signature(func)
             type_hints = get_type_hints(func)
             
-            func._flasknova_tags = tags or []
-            func._flasknova_response_model = response_model
-            func._flasknova_summary = summary
-            func._flasknova_description = description
+            f = resolve_dependencies(func)
 
-            @wraps(func)
+            setattr(f, "_flasknova_tags", tags or [])
+            setattr(f, "_flasknova_response_model", response_model)
+            setattr(f, "_flasknova_summary", summary)
+            setattr(f, "_flasknova_description", description)
+
+            @wraps(f)
             async def wrapper(*args, **kwargs):
-                bound_values = await _bind_route_parameters(func, sig, type_hints)
+                bound_values = await _bind_route_parameters(f, sig, type_hints)
                 if isinstance(bound_values, tuple):
                     return bound_values 
                 try:
                     if is_async:
-                        result = await func(**bound_values)
+                        result = await f(**bound_values)
                     else:
-                        result = func(**bound_values)
+                        result = f(**bound_values)
                 except HTTPException as e:
                     raise                
                 return _serialize_response(result, response_model, request)
@@ -262,21 +277,24 @@ class NovaBlueprint(_Blueprint):
             sig = inspect.signature(func)
             type_hints = get_type_hints(func)
 
-            func._flasknova_tags = tags or []
-            func._flasknova_response_model = response_model
-            func._flasknova_summary = summary
-            func._flasknova_description = description
+            f = resolve_dependencies(func)
 
-            @wraps(func)
+
+            setattr(f, "_flasknova_tags", tags or [])
+            setattr(f, "_flasknova_response_model", response_model)
+            setattr(f, "_flasknova_summary", summary)
+            setattr(f, "_flasknova_description", description)
+
+            @wraps(f)
             async def wrapper(*args, **kwargs):
-                bound_values = await _bind_route_parameters(func, sig, type_hints)
+                bound_values = await _bind_route_parameters(f, sig, type_hints)
                 if isinstance(bound_values, tuple):
                     return bound_values  # error response from _bind_route_parameters
                 try:
                     if is_async:
-                        result = await func(**bound_values)
+                        result = await f(**bound_values)
                     else:
-                        result = func(**bound_values)
+                        result = f(**bound_values)
                 except HTTPException as e:
                     raise
                 return _serialize_response(result, response_model, request)

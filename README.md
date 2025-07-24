@@ -1,7 +1,7 @@
-
 ![Publish to PyPI](https://github.com/manitreasure1/flasknova/actions/workflows/publish.yml/badge.svg)
+![Downloads](https://static.pepy.tech/badge/flask-nova)
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/flasknova.svg?color=blue" alt="PyPI version">
+  <img src="https://img.shields.io/pypi/v/flask-nova.svg?color=blue" alt="PyPI version">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/Swagger%20UI-Auto-blueviolet" alt="Swagger UI">
 </p>
@@ -66,7 +66,7 @@ FlaskNova is ideal for teams and solo developers who want the power of modern Py
 
 ## Features
 
-- **Swagger UI**: FlaskNova includes automatic Swagger UI documentation for your API. Once your app is running, visit `flasknova/docs` in your browser to explore and test your endpoints interactively.
+- **Swagger UI**: FlaskNova includes automatic Swagger UI documentation for your API. Once your app is running, visit `/docs` in your browser to explore and test your endpoints interactively.
 
 - **Flexible Serialization**: Validate incoming request data and serialize responses using Pydantic models. For responses, you can return Pydantic models, dataclasses, dictionaries, or objects with a `to_dict()`/`dict()`/`dump()` method. Marshmallow schemas and custom classes with a serialization method are also supported for response serialization. **If you use a custom class, you must implement a `to_dict`, `dict`, or `dump` method—otherwise, FlaskNova will not be able to serialize your object.**
 - **Dependency Injection**: Use the `Depend` helper to inject dependencies into your route handlers.
