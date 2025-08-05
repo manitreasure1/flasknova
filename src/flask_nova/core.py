@@ -1,27 +1,29 @@
+
 from flask import Flask as _Flask, Blueprint as _Blueprint, request, jsonify, g, make_response
+from typing import Any, get_type_hints, get_origin, get_args, Literal, Optional, List, Union
 from flask_nova.exceptions import HTTPException, ResponseValidationError
-from typing import get_type_hints, get_origin, get_args, Literal, Optional, Annotated
-from pydantic import BaseModel, ValidationError
 from flask_nova.d_injection import Depend, resolve_dependencies
-from flask_nova.status import status
 from flask_nova.swagger import create_swagger_blueprint
 from flask_nova.logger import get_flasknova_logger
+from pydantic import BaseModel, ValidationError
+from flask_nova.status import status
 from functools import wraps
+from enum import Enum
 import dataclasses
 import inspect
+from flask_nova.multi_part import Form
+from flask_nova.utils import (
+                    _bind_custom_class_form,
+                   _bind_dataclass_form,
+                   _bind_pydantic_form,
+                   resolve_annotation,
+                   extract_status_code,
+                   extract_data
+                   )
+
 
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 logger = get_flasknova_logger()
-
-
-def resolve_annotation(annotation):
-    if get_origin(annotation) is Annotated:
-        base_type, *extras = get_args(annotation)
-        for extra in extras:
-            if isinstance(extra, Depend):
-                return base_type, extra
-        return base_type, None
-    return annotation, None
 
 
 async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
@@ -31,6 +33,7 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
         annotation = type_hints.get(name)
         base_type, dependency = resolve_annotation(annotation)
         default = param.default
+
         if isinstance(default, Depend):
             dep_func = (dependency or default).dependency
             if not hasattr(g, "_nova_deps"):
@@ -42,10 +45,27 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
                     g._nova_deps[dep_func] = dep_func()
             bound_values[name] = g._nova_deps[dep_func]
 
+        # Todo: resolve form 500 error 
+        elif dependency is Form:
+            if request.content_type is None or not any(
+                request.content_type.startswith(t)
+                for t in ["multipart/form-data", "application/x-www-form-urlencoded"]
+            ):
+                raise HTTPException(
+                    status_code=status.UNSUPPORTED_MEDIA_TYPE,
+                    detail="The endpoint expects form data, but the request has an incorrect content type."
+                )
+            if isinstance(base_type, type) and issubclass(base_type, BaseModel):
+                bound_values[name] = _bind_pydantic_form(base_type)
+            elif dataclasses.is_dataclass(base_type):
+                bound_values[name] = _bind_dataclass_form(base_type)
+            elif isinstance(base_type, type):
+                bound_values[name] = _bind_custom_class_form(base_type)
+
+
         elif base_type and isinstance(base_type, type) and issubclass(annotation, BaseModel):
             try:
-                json_data = request.get_json(force=True)
-                bound_values[name] = annotation(**json_data)
+                bound_values[name] = base_type.model_validate(request.form)
             except ValidationError as e:
                 raise ResponseValidationError(detail=str(e), original_exception=e, instance=request.full_path)
         elif base_type and hasattr(annotation, '__init__') and annotation not in (str, int, float, bool, dict, list):
@@ -73,19 +93,8 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
     return bound_values
 
 
-def extract_status_code(data, default=200):
-    """Extract status code from tuple or enum, or return default."""
-    if isinstance(data, tuple):
-        possible_status = data[1] if len(data) > 1 else default
-        if not isinstance(possible_status, int) and hasattr(possible_status, 'value') and isinstance(getattr(possible_status, 'value', None), int):
-            return possible_status.value
-        elif isinstance(possible_status, int):
-            return possible_status
-    return default
 
-def extract_data(data):
-    """Extract main data from tuple or return as is."""
-    return data[0] if isinstance(data, tuple) else data
+
 
 def _serialize_response(result, response_model, request):    
     def serialize_item(item):
@@ -196,12 +205,14 @@ class FlaskNova(_Flask):
             rule: str,
             *,
             methods: list[Method] = ["GET"],
-            tags: list[str] | None = None,
-            response_model: type | None = None,
-            summary: str | None = None,
-            description: str | None = None,
+            tags: Optional[List[Union[str, Enum]]] = None,
+            response_model: Any | None = None,
+            summary: str | None = "",
+            description: str | None = "",
+            provide_automatic_options: bool | None = None,
             **options
-        ):      
+        ):
+       
         def decorator(func):
             is_async = inspect.iscoroutinefunction(func)
             sig = inspect.signature(func)
@@ -248,6 +259,7 @@ class FlaskNova(_Flask):
                               endpoint=func.__name__,
                               view_func=wrapper,
                               methods=methods,
+                              provide_automatic_options=provide_automatic_options,
                               **flask_options)
             return func
 
@@ -260,16 +272,38 @@ class NovaBlueprint(_Blueprint):
             rule: str,
             *,
             methods: list[Method] = ["GET"],
-            tags: list[str] | None = None,
-            response_model: type | None = None,
-            summary: str | None = None,
-            description: str | None = None,
-            **options
+            tags: Optional[List[Union[str, Enum]]] = None,
+            response_model: Any | None = None,
+            summary: str | None = "",
+            description: str | None = "",
+            provide_automatic_options: bool | None = None,
+            **options: Any
         ):  
         """
-        A Blueprint-style .route() that accepts:
-        - methods, tags,
-        - response_model 
+        ### ~ Example
+        ```
+        class GreetModel(BaseModel):
+            message: str
+            name: str
+
+        @app.route("/",
+            methods=["GET"],
+            tags=["Greet"],
+            summary="Greet Flask",
+            response_model=GreetModel,
+            description="Recieve Greetings from flask"
+        )
+        def index():
+            return {"message=Hello, name=Flask!"}
+        ```
+        #### A Blueprint-style `.route()` that accepts:
+        - methods,
+        - tags,
+        - response_model,
+        - summary,
+        - description,
+        - provide_automatic_options,
+        - **options
         """
 
         def decorator(func):
@@ -320,6 +354,7 @@ class NovaBlueprint(_Blueprint):
                               endpoint=func.__name__,
                               view_func=wrapper,
                               methods=methods,
+                              provide_automatic_options=provide_automatic_options,
                               **flask_options)
             return func
 

@@ -1,8 +1,10 @@
 import unittest
-from typing import cast
+from typing import cast, Annotated
 from flask import request
-from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException
+from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException, Form
 import asyncio
+import json
+from pydantic import BaseModel
 
 bp = NovaBlueprint("test", __name__)
 
@@ -18,6 +20,19 @@ def get_json_data():
 async def get_async_user():
     await asyncio.sleep(0.01)
     return {"name": "AsyncTreasure"}
+
+class UserForm(BaseModel):
+    name: str
+    age: int
+    is_active: bool = True
+
+
+
+
+@bp.route("/register-user", methods=["POST"], summary="Register User with Form", description="Accepts form data for user registration.")
+def register_user(user_data: Annotated[UserForm, Form]):
+    return user_data.model_dump(), status.CREATED
+
 
 
 # === Routes ===
@@ -106,6 +121,22 @@ class FlaskNovaTestCase(unittest.TestCase):
         response = self.client.get("/async-hello")
         self.assertEqual(response.status_code, 200)
         self.assertIn("AsyncTreasure", response.get_json()["message"])
+
+
+    def test_successful_form_submission_multipart(self):
+        """Test a valid multipart/form-data submission."""
+        data = {
+            'name': 'Alice',
+            'age': '30',
+            'is_active': 'true'
+        }
+        response = self.client.post("/register-user", data=data, content_type="application/x-www-form-urlencoded")
+
+        self.assertEqual(response.status_code, status.CREATED)
+        # response_data = json.loads(response.data)
+        # self.assertEqual(response_data['name'], "Alice")
+        # self.assertEqual(response_data['age'], 30)
+        # self.assertEqual(response_data['is_active'], True)
 
 
 if __name__ == "__main__":
