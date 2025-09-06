@@ -1,35 +1,30 @@
 from typing import Optional
-
-ERROR_STATUS_TYPE_MAP = {
-    400: ("https://httpstatuses.com/400", "Bad Request"),
-    401: ("https://httpstatuses.com/401", "Unauthorized"),
-    403: ("https://httpstatuses.com/403", "Forbidden"),
-    404: ("https://httpstatuses.com/404", "Not Found"),
-    405: ("https://httpstatuses.com/405", "Method Not Allowed"),
-    409: ("https://httpstatuses.com/409", "Conflict"),
-    422: ("https://httpstatuses.com/422", "Unprocessable Entity"),
-    500: ("https://httpstatuses.com/500", "Internal Server Error"),
-    501: ("https://httpstatuses.com/501", "Not Implemented"),
-    502: ("https://httpstatuses.com/502", "Bad Gateway"),
-    503: ("https://httpstatuses.com/503", "Service Unavailable"),
-}
+import http
 
 
 class HTTPException(Exception):
     def __init__(
         self,
         status_code: int,
-        detail: str,
+        detail: Optional[str|list]= None,
         title: Optional[str] = None,
         type_: Optional[str] = None,
         instance: Optional[str] = None
     ):
+        
+        http_status = http.HTTPStatus(status_code)
         self.status_code = status_code
-        self.detail = detail
-        default_type, default_title = ERROR_STATUS_TYPE_MAP.get(status_code, ("about:blank", "HTTP Error"))
-        self.type = type_ or default_type
-        self.title = title or default_title
+        self.detail = detail or http_status.phrase
+        self.title = title or http_status.phrase
+        self.type = type_ or f"https://httpstatuses.com/{status_code}"
         self.instance = instance
+
+    def __str__(self) -> str:
+           return f"{self.status_code}: {self.detail}"
+
+    def __repr__(self) -> str:
+        class_name = self.__class__.__name__
+        return f"{class_name}(status_code={self.status_code!r}, detail={self.detail!r})"
 
 
 
@@ -38,8 +33,11 @@ class ResponseValidationError(HTTPException):
         super().__init__(
             status_code=500,
             detail=detail,
+            instance=instance,
             title="Response Validation Error",
             type_="https://httpstatuses.com/500",
-            instance=instance,
         )
         self.original_exception = original_exception
+
+
+

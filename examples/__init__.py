@@ -1,0 +1,1 @@
+# $env:PYTHONPATH="c:/Users/Treasure Mani/flasknova/src"; & "C:/Users/Treasure Mani/AppData/Local/pypoetry/Cache/virtualenvs/flask-nova-x8FaS6gw-py3.10/Scripts/python.exe" "c:/Users/Treasure Mani/flasknova/examples/form_ex.py"

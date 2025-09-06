@@ -3,9 +3,17 @@ from flask import g
 import inspect
 
 
-class Depend:
-    def __init__(self, dependency):
+from typing import TypeVar, Generic, Callable
+
+T = TypeVar("T")
+
+class Depend(Generic[T]):
+    def __init__(self, dependency: Callable[..., T]):
         self.dependency = dependency
+
+    @classmethod
+    def __class_getitem__(cls, item):
+        return cls
 
 
 def resolve_dependencies(view_func):
