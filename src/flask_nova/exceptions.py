@@ -6,7 +6,7 @@ class HTTPException(Exception):
     def __init__(
         self,
         status_code: int,
-        detail: Optional[str]= None,
+        detail: Optional[str|list]= None,
         title: Optional[str] = None,
         type_: Optional[str] = None,
         instance: Optional[str] = None

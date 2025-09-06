@@ -7,16 +7,14 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
-    "Flask[async]==3.1.1",
-    "pydantic==2.11.5"
+    "flask[async] (>=3.1.1,<4.0.0)",
+    "pydantic (>=2.11.7,<3.0.0)"
 ]
 
-
-
 [tool.poetry]
-packages = [{include = "flask_nova", from = "src"}] 
+packages = [{include = "flask_nova", from = "src"}]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

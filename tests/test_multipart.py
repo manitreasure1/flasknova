@@ -1,10 +1,8 @@
 import unittest
 from functools import wraps
-from flask_nova import guard, FlaskNova,NovaBlueprint, status, Depend, HTTPException, Form
+from flask_nova import guard, FlaskNova,NovaBlueprint, status, Form
 import json
 from pydantic import BaseModel
-from flask import request
-import asyncio
 from typing import Annotated
 
 bp = NovaBlueprint("test", __name__)
@@ -56,7 +54,7 @@ class UserForm(BaseModel):
 
 
 @bp.route("/register-user", methods=["POST"], summary="Register User with Form", description="Accepts form data for user registration.")
-def register_user(user_data: Annotated[UserForm, Form]):
+def register_user(user_data: Annotated[UserForm, Form()]):
     return user_data.model_dump(), status.CREATED
 
 
@@ -123,14 +121,14 @@ class TestFormDependency(unittest.TestCase):
         """Test a form submission with invalid data."""
         data = {
             'name': 'Charlie',
-            'age': 'thirty',  # Invalid age
+            'age': 'thirty', 
             'is_active': 'true'
         }
         response = self.client.post("/register-user", data=data)
         
         self.assertEqual(response.status_code, status.UNPROCESSABLE_ENTITY)
         response_data = json.loads(response.data)
-        self.assertIn("age", response_data['detail'])
+        self.assertTrue(any("age" in err["loc"] for err in response_data['detail']))
 
     def test_missing_required_form_field(self):
         """Test a form submission with a missing required field."""
@@ -142,7 +140,7 @@ class TestFormDependency(unittest.TestCase):
 
         self.assertEqual(response.status_code, status.UNPROCESSABLE_ENTITY)
         response_data = json.loads(response.data)
-        self.assertIn("name", response_data['detail'])
+        self.assertTrue(any("name" in err["loc"] for err in response_data['detail']))
 
     def test_wrong_content_type_for_form(self):
         """Test sending JSON data to an endpoint expecting form data."""
@@ -156,9 +154,6 @@ class TestFormDependency(unittest.TestCase):
         self.assertEqual(response.status_code, status.UNSUPPORTED_MEDIA_TYPE)
         response_data = json.loads(response.data)
         self.assertIn("The endpoint expects form data", response_data['detail'])
-
-
-
 
 
 if __name__ == "__main__":

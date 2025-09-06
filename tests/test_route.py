@@ -3,7 +3,6 @@ from typing import cast, Annotated
 from flask import request
 from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException, Form
 import asyncio
-import json
 from pydantic import BaseModel
 
 bp = NovaBlueprint("test", __name__)

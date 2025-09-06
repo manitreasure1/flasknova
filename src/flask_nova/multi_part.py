@@ -1,11 +1,14 @@
-from typing import Callable
+from typing import Any, Callable
 
-class Form:
-    """
-    Describes a form field submitted via multipart/form-data or application/x-www-form-urlencoded.
-    Used with Annotated:
-        username: Annotated[str, Form()]
-    """
+
+
+class FormMarker:
+    def __init__(self, type_: type | None = None):
+        self.type_ = type_
+
+def Form(type_: type | None = None)->Any:
+    return FormMarker(type_)
+
 
 def guard(*guards: Callable[[Callable], Callable]):
     def decorator(f: Callable) -> Callable:

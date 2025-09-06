@@ -1,20 +1,28 @@
+
 from pydantic import BaseModel, ValidationError, create_model
 from typing import Type, get_args, get_origin, Annotated
 from flask_nova.exceptions import HTTPException
 from flask_nova.d_injection import Depend
 from flask import request
 from flask_nova.status import status
-import dataclasses
+from flask_nova.multi_part import FormMarker
+import inspect
 
-
-def resolve_annotation(annotation):
-    if get_origin(annotation) is Annotated:
+def resolve_annotation(annotation, default=inspect.Parameter.empty):
+    if annotation and get_origin(annotation) is Annotated:
         base_type, *extras = get_args(annotation)
         for extra in extras:
-            if isinstance(extra, Depend):
+            if isinstance(extra, (Depend, FormMarker)):
                 return base_type, extra
         return base_type, None
+
+    if isinstance(default, (Depend, FormMarker)):
+        return annotation, default
+
     return annotation, None
+
+
+
 
 def extract_data(data):
     """Extract main data from tuple or return as is."""
@@ -30,41 +38,36 @@ def extract_status_code(data, default=200):
             return possible_status
     return default
 
-def _bind_pydantic_form(model_class: type[BaseModel]= BaseModel):
+
+
+
+
+def _bind_pydantic_form(model_class: type[BaseModel]):
     if request.content_type is None or not any(
         request.content_type.startswith(t)
         for t in ["multipart/form-data", "application/x-www-form-urlencoded"]
     ):
         raise HTTPException(
             status_code=status.UNSUPPORTED_MEDIA_TYPE,
-            detail="The endpoint expects form data, but the request has an incorrect content type."
+            detail="The endpoint expects form data, but the request has an incorrect content type.",
         )
-    
+    form_data = request.form.to_dict(flat=True) #type: ignore
+
     try:
-        form_data = request.form.to_dict()
         return model_class.model_validate(form_data)
     except ValidationError as e:
         raise HTTPException(
             status_code=status.UNPROCESSABLE_ENTITY,
-            detail=str(e.errors()),
+            detail=e.errors(),
             title="Form Validation Error"
         )
+
+
     
 
 
 
 def _bind_dataclass_form(dataclass_class):
-    if not dataclasses.is_dataclass(dataclass_class):
-        raise TypeError("Expected a dataclass.")
-    if request.content_type is None or not any(
-        request.content_type.startswith(t)
-        for t in ["multipart/form-data", "application/x-www-form-urlencoded"]
-    ):
-        raise HTTPException(
-            status_code=status.UNSUPPORTED_MEDIA_TYPE,
-            detail="The endpoint expects form data, but the request has an incorrect content type."
-        )
-    
     TempModel = create_model(
         'DataclassFormWrapper',
         data=(dataclass_class, ...) 
