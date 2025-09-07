@@ -29,4 +29,5 @@ def hello(user=cast(dict, Depend(get_user))):
 app.register_blueprint(bp)
 
 if __name__=="__main__":
+    app.setup_swagger()
     app.run(debug=True)

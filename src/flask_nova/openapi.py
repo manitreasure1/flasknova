@@ -73,7 +73,6 @@ def generate_openapi(
         type_hints = getattr(view_func, "__annotations__", {})
         methods = [m for m in (rule.methods or []) if m in {"GET", "POST", "PUT", "DELETE"}]
 
-        # Rewrite path to OpenAPI format and extract parameters
         openapi_path = re.sub(r'<(?:[^:<>]+:)?([^<>]+)>', r'{\1}', rule.rule)
         path_params = []
         for match in re.finditer(r'<([^>]+)>', rule.rule):

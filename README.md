@@ -47,6 +47,7 @@
 * [Error Handling](#error-handling)
 * [Response Serialization](#response-serialization--custom-responses)
 * [Logging](#logging)
+* [CLI](#cli)
 * [FAQ](#faq)
 * [Learn More](#-learn-more)
 * [License](#-license)
@@ -273,6 +274,54 @@ def custom():
 from flasknova import logger
 logger.info("FlaskNova app started!")
 ```
+
+---
+## Cli
+
+Flask-Nova provides a CLI tool to automatically generate HTTP request files (`.http`) and Python test scripts (`.py`) for your Flask routes.
+
+### Usage
+
+#### Command
+
+```bash
+flask-nova gen --app <your_app_path> [OPTIONS]
+```
+
+#### Required Option
+
+* `--app TEXT` — Your Flask app import path, e.g. `examples.form_ex:app`
+
+#### Optional Options
+
+* `--format [http|py|all]` — File format to generate (default: `all`)
+* `--base-url TEXT` — Base URL for requests (default: `http://127.0.0.1:5000`)
+* `--output PATH` — Directory to save generated files (default: current directory)
+
+#### Examples
+
+Generate HTTP requests only:
+
+```bash
+flask-nova gen --app examples.form_ex:app --format http
+```
+
+Generate Python requests only:
+
+```bash
+flask-nova gen --app examples.form_ex:app --format py
+```
+
+Generate both HTTP and Python requests:
+
+```bash
+flask-nova gen --app examples.form_ex:app --format all
+```
+
+The generated files will handle:
+
+* JSON for normal routes
+* `multipart/form-data` for routes using `Form()`
 
 ---
 

@@ -12,6 +12,8 @@ dependencies = [
     "flask[async] (>=3.1.1,<4.0.0)",
     "pydantic (>=2.11.7,<3.0.0)"
 ]
+[tool.poetry.scripts]
+flask-nova = "flask_nova.cli:cli"
 
 [tool.poetry]
 packages = [{include = "flask_nova", from = "src"}]
