@@ -11,7 +11,7 @@ class HTTPException(Exception):
         type_: Optional[str] = None,
         instance: Optional[str] = None
     ):
-        
+
         http_status = http.HTTPStatus(status_code)
         self.status_code = status_code
         self.detail = detail or http_status.phrase

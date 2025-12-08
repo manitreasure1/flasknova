@@ -5,7 +5,7 @@ class status(IntEnum):
     CONTINUE = 100
     SWITCHING_PROTOCOLS = 101
     PROCESSING = 102
-    
+
     # 2xx Success
     OK = 200
     CREATED = 201

@@ -1,28 +1,32 @@
+from flask.sansio.scaffold import setupmethod
 from typing_extensions import Annotated, Doc
-from .router import NovaBluePrint
-from flask import Flask as _Flask, request, Response, jsonify
+from flask import Blueprint as _Blueprint
 from . import types as nt
 from enum import Enum
 import typing as t
 import os
-from .docs.docs import create_docs_blueprint
-from .exceptions import HTTPException
+from .responses import ResponseSerializer
+from .route_refactor import RouteFactory
 
-class FlaskNova(_Flask):
+class NovaBluePrint(_Blueprint):
     """
-    Main entry point for creating a FlaskNova application.
-
     #### Example:
     ```python
     from flask_nova import FlaskNova
 
-    app = FlaskNova(__name__)
+    app = NovaBluePrint("sub")
     ```
     """
 
     def __init__(
         self,
-        *,
+        name: Annotated[
+            str,
+            Doc(
+                """
+                """
+            ),
+        ],
         import_name: Annotated[
             str,
             Doc(
@@ -33,6 +37,7 @@ class FlaskNova(_Flask):
                 """
             ),
         ],
+         *,
         static_url_path: Annotated[
             str | None,
             Doc(
@@ -61,26 +66,6 @@ class FlaskNova(_Flask):
                 """
             ),
         ] = None,
-        host_matching: Annotated[
-            bool,
-            Doc(
-                """
-                Enable matching the request host against the route’s
-                `<host>` patterns.
-                Set to `True` to use host-based routing.
-                """
-            ),
-        ] = False,
-        subdomain_matching: Annotated[
-            bool,
-            Doc(
-                """
-                Enable subdomain matching for routes.
-                Useful for applications responding to
-                multiple subdomains (e.g., `api.example.com`).
-                """
-            ),
-        ] = False,
         template_folder: Annotated[
             str | os.PathLike[str] | None,
             Doc(
@@ -90,25 +75,27 @@ class FlaskNova(_Flask):
                 """
             ),
         ] = "templates",
-        instance_path: Annotated[
+        url_prefix: Annotated[
             str | None,
             Doc(
                 """
-                Path to the instance folder for configuration
-                or data not under version control.
-                If omitted, Flask creates one automatically.
                 """
             ),
         ] = None,
-        instance_relative_config: Annotated[
-            bool,
+        subdomain: Annotated[
+            str | None,
             Doc(
                 """
-                If `True`, file paths provided to `app.config.from_pyfile`
-                are relative to the instance folder instead of the root path.
                 """
             ),
-        ] = False,
+        ] = None,
+        url_defaults: Annotated[
+            dict[str, t.Any] | None,
+            Doc(
+                """
+                """
+            ),
+        ] = None,
         root_path: Annotated[
             str | None,
             Doc(
@@ -119,109 +106,52 @@ class FlaskNova(_Flask):
                 """
             ),
         ] = None,
-        summary: Annotated[
-            t.Optional[str],
-            Doc(
-                """
-                A concise summary of your API.
+        **kwargs
+    ):
 
-                Example:
-                    ```python
-                    app = FlaskNova(__name__, summary="The Lite Nova")
-                    ```
-                """
-            ),
-        ] = None,
-        description: Annotated[
-            t.Optional[str],
-            Doc(
-                """
-                A detailed description of the API (supports Markdown).
-
-                Example:
-                    ```python
-                    app = FlaskNova(
-                        __name__,
-                        description=\"\"\"Find options within options.
-                        **Nova — the new era**\"\"\"
-                    )
-                    ```
-                """
-            ),
-        ] = None,
-        version: Annotated[
-            str,
-            Doc(
-                """
-                The API version string.
-
-                Example:
-                    ```python
-                    app = FlaskNova(__name__, version="0.0.1")
-                    ```
-                """
-            ),
-        ],
-    ) -> None:
         super().__init__(
+            name,
             import_name,
-            static_url_path,
             static_folder,
-            static_host,
-            host_matching,
-            subdomain_matching,
+            static_url_path,
             template_folder,
-            instance_path,
-            instance_relative_config,
+            url_prefix,
+            subdomain,
+            url_defaults,
+            static_host,
             root_path,
         )
-        self.register_error_handler(HTTPException, self._handle_http_exception)
-        self.description = description
-        self.version = version
-        self.summary = summary
-        self.nova_blueprints = NovaBluePrint("", import_name)
+        self._serializer = ResponseSerializer()
+        self.route_factory = RouteFactory(self._serializer)
 
-        swagger_enabled = self.config.get("FLASKNOVA_ENABLED_DOCS", True)
-        if swagger_enabled:
-            self._setup_docs()
+    def _method_route( # type: ignore[override]
+        self,
+        rule: str,
+        method: nt.Method,
+        *,
+        tags: t.Optional[t.List[t.Union[str, Enum]]] = None,
+        response_model: t.Any | None = None,
+        summary: str | None = "",
+        description: str | None = "",
+        **options: t.Any,
+    ) -> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
+        if "methods" in options:
+            raise TypeError("Use the 'route' decorator to use the 'methods' argument.")
+        for key in ("tags", "response_model", "summary", "description"):
+            if key in options:
+                raise TypeError(f"Use the 'route' decorator to set '{key}'.")
 
+        return self.route(
+            rule,
+            methods=[method],
+            tags=tags,
+            response_model=response_model,
+            summary=summary,
+            description=description,
+            **options,
+        )
 
-    def _setup_docs(self):
-        docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
-        redoc_route = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/redocs")
-
-        docs_bp = create_docs_blueprint(
-            import_name=self.import_name,
-            version=self.version,
-            security_schemes="",
-            global_security="",
-            docs_route=docs_path,
-            redoc_route=redoc_route
-            )
-        self.register_blueprint(docs_bp)
-
-
-        @self.after_request
-        def add_cache_headers(response: Response):
-            if request.path.startswith(docs_path) or request.path.startswith(redoc_route):
-                if response.mimetype in ['text/css', 'application/javascript']:
-                    response.headers['Cache-Control'] = 'public, max-age=86400'
-                else:
-                    response.headers['Cache-Control'] = 'no-store'
-            return response
-
-    def _handle_http_exception(self, error: HTTPException):
-        problem = {
-            "type": error.type,
-            "title": error.title,
-            "status": error.status_code,
-            "detail": error.detail,
-            "instance": error.instance or request.full_path
-        }
-        return jsonify(problem), error.status_code
-
-
-
+    @setupmethod
     def route(
         self,
         rule: Annotated[
@@ -285,7 +215,9 @@ class FlaskNova(_Flask):
             provide_automatic_options: Whether to add an automatic OPTIONS handler.
             **options: Additional keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints.route(
+
+        return self.route_factory.build(
+            owner=self,
             rule=rule,
             methods=methods,
             tags=tags,
@@ -293,12 +225,13 @@ class FlaskNova(_Flask):
             summary=summary,
             description=description,
             provide_automatic_options=provide_automatic_options,
-            options=options
+            options=options,
         )
 
 
 
-    def get(  # type: ignore[override]
+    @setupmethod
+    def get( # type: ignore[override]
         self,
         rule: Annotated[
             str,
@@ -334,7 +267,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="GET",
             tags=tags,
@@ -344,6 +277,7 @@ class FlaskNova(_Flask):
             **options,
         )
 
+    @setupmethod
     def post( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the POST endpoint.')],
@@ -377,7 +311,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="POST",
             tags=tags,
@@ -387,7 +321,8 @@ class FlaskNova(_Flask):
             **options,
         )
 
-    def put(  # type: ignore
+    @setupmethod
+    def put( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the PUT endpoint.')],
         *,
@@ -420,7 +355,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="PUT",
             tags=tags,
@@ -430,7 +365,9 @@ class FlaskNova(_Flask):
             **options,
         )
 
-    def delete(  # type: ignore
+
+    @setupmethod
+    def delete( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the DELETE endpoint.')],
         *,
@@ -463,7 +400,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="DELETE",
             tags=tags,
@@ -473,7 +410,8 @@ class FlaskNova(_Flask):
             **options,
         )
 
-    def patch(  # type: ignore
+    @setupmethod
+    def patch( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the PATCH endpoint.')],
         *,
@@ -506,7 +444,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="PATCH",
             tags=tags,
@@ -516,6 +454,8 @@ class FlaskNova(_Flask):
             **options,
         )
 
+
+    @setupmethod
     def head(
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the HEAD endpoint.')],
@@ -549,7 +489,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="HEAD",
             tags=tags,
@@ -559,6 +499,7 @@ class FlaskNova(_Flask):
             **options,
         )
 
+    @setupmethod
     def options(
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the OPTIONS endpoint.')],
@@ -592,7 +533,7 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self._method_route(
             rule,
             method="OPTIONS",
             tags=tags,
@@ -601,3 +542,6 @@ class FlaskNova(_Flask):
             description=description,
             **options,
         )
+
+
+

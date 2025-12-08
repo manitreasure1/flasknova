@@ -1,32 +1,30 @@
-from flask_nova.logger import get_flasknova_logger
+from ..logger import get_flasknova_logger
 from typing import get_type_hints
 from flask import Flask
 import dataclasses
 import pydantic
 import inspect
 import re
-from flask_nova.d_injection import Depend
+from ..di import Depend
+from ..types import FLASK_TO_OPENAPI_TYPES
 
-FLASK_TO_OPENAPI_TYPES = {
-    "string": ("string", None),
-    "int": ("integer", None),
-    "float": ("number", None),
-    "uuid": ("string", "uuid"),
-    "path": ("string", None),
-    "any": ("string", None),
-}
 
 def generate_openapi(
     app: Flask,
-    title="FlaskNova API",
-    version="1.0.0",
+    title: str,
+    version: str,
     security_schemes=None,
     global_security=None
 ):
+
     logger = get_flasknova_logger()
+
+
     paths = {}
     components = {"schemas": {}}
     info = getattr(app, "_flasknova_openapi_info", None)
+
+
 
     def is_pydantic_model(annotation):
         try:
@@ -47,19 +45,19 @@ def generate_openapi(
             isinstance(annotation, type) and
             hasattr(annotation, '__annotations__') and
             not is_pydantic_model(annotation) and
-            not is_dataclass_model(annotation) 
+            not is_dataclass_model(annotation)
         )
 
     for rule in app.url_map.iter_rules():
         if rule.endpoint == 'static':
             continue
 
-        view_func = app.view_functions[rule.endpoint]     
+        view_func = app.view_functions[rule.endpoint]
         tags = getattr(view_func, "_flasknova_tags", [])
         response_model = getattr(view_func, "_flasknova_response_model", None)
         summary = getattr(view_func, "_flasknova_summary", None)
         description = getattr(view_func, "_flasknova_description", None)
-        
+
         doc = inspect.getdoc(view_func)
         doc_summary, doc_description = None, None
 
@@ -74,7 +72,11 @@ def generate_openapi(
         methods = [m for m in (rule.methods or []) if m in {"GET", "POST", "PUT", "DELETE"}]
 
         openapi_path = re.sub(r'<(?:[^:<>]+:)?([^<>]+)>', r'{\1}', rule.rule)
+
+
         path_params = []
+
+
         for match in re.finditer(r'<([^>]+)>', rule.rule):
             param = match.group(1)
             if ':' in param:
@@ -120,7 +122,7 @@ def generate_openapi(
             }
 
             found_body = False
-            for name, param in sig.parameters.items():                 
+            for name, param in sig.parameters.items():
                 annotation = type_hints.get(name, param.annotation)
                 if found_body:
                     continue
@@ -212,10 +214,10 @@ def generate_openapi(
     openapi = {
         "openapi": "3.0.0",
         "info": {
-            **info, 
-            "title": info.get("title", title), 
+            **info,
+            "title": info.get("title", title),
             "version": info.get("version", version),
-        }, 
+        },
         "paths": paths
     }
 
