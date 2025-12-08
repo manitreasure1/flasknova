@@ -188,7 +188,7 @@ class FlaskNova(_Flask):
 
     def _setup_docs(self):
         docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
-        redoc_route = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/redocs")
+        redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redocs")
 
         docs_bp = create_docs_blueprint(
             import_name=self.import_name,

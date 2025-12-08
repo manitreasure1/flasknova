@@ -17,7 +17,7 @@ flask-nova = "flask_nova.cli:cli"
 
 [tool.poetry]
 packages = [
-    { include = "flask_nova2", from = "src" }
+    { include = "flask_nova", from = "src" }
     ]
 
 [build-system]

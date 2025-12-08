@@ -21,8 +21,8 @@
 * ✅ Response model serialization (Pydantic, dataclass, or custom class with `to_dict`)
 * ✅ Docstring-based or keyword-based `summary` and `description` for endpoints
 * ✅ Typed URL parameters (`<int:id>`, `<uuid:id>`, etc.)
-* ✅ Customizable Swagger UI route path and OpenAPI metadata
-* ✅ Configurable via `FLASKNOVA_SWAGGER_ENABLED` and `FLASKNOVA_SWAGGER_ROUTE`
+* ✅ Customizable Swagger UI and Redoc route path and OpenAPI metadata
+* ✅ Configurable via `FLASKNOVA_ENABLED_DOCS` and `FLASKNOVA_SWAGGER_ROUTE` and `FLASKNOVA_REDOC_ROUTE`
 * ✅ Clean modular routing with `NovaBlueprint`
 * ✅ Built-in HTTP status codes (`flasknova.status`)
 * ✅ Optional JWT auth and dependency injection helpers
@@ -152,8 +152,9 @@ Environment vars:
 
 | Variable                    | Default | Description                 |
 | --------------------------- | ------- | --------------------------- |
-| `FLASKNOVA_SWAGGER_ENABLED` | `True`  | Disable Swagger UI if False |
-| `FLASKNOVA_SWAGGER_ROUTE`   | `/docs` | Change UI path              |
+| `FLASKNOVA_ENABLED_DOCS` | `True`  | Disable Swagger UI if False |
+| `FLASKNOVA_SWAGGER_ROUTE`   | `/docs` | Change swagger UI path              |
+| `FLASKNOVA_REDOC_ROUTE` | `/redoc` | change redoc ui path |
 
 ---
 
