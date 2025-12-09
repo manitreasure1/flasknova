@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ValidationError, create_model
 from typing import Type, get_args, get_origin, Annotated, Any
-from flask_nova.exceptions import HTTPException
-from flask_nova.d_injection import Depend
+from .exceptions import HTTPException
+from .di import Depend
 from flask import request
 from flask_nova.status import status
-from flask_nova.multi_part import FormMarker
+from .multi_part import FormMarker
 import inspect
 
 FLASK_ALLOWED_ROUTE_ARGS = {

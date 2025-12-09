@@ -1,5 +1,5 @@
 from typing_extensions import Annotated, Doc
-from .router import NovaBluePrint
+from .router import NovaBlueprint
 from flask import Flask as _Flask, request, Response, jsonify
 from . import types as nt
 from enum import Enum
@@ -51,7 +51,7 @@ class FlaskNova(_Flask):
                 Defaults to `'static'` in the application root.
                 """
             ),
-        ] = "static",
+        ] = None,
         static_host: Annotated[
             str | None,
             Doc(
@@ -179,7 +179,7 @@ class FlaskNova(_Flask):
         self.description = description
         self.version = version
         self.summary = summary
-        self.nova_blueprints = NovaBluePrint("", import_name)
+        self.nova_blueprints = NovaBlueprint("nova", import_name)
 
         swagger_enabled = self.config.get("FLASKNOVA_ENABLED_DOCS", True)
         if swagger_enabled:
@@ -188,7 +188,7 @@ class FlaskNova(_Flask):
 
     def _setup_docs(self):
         docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
-        redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redocs")
+        redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redoc")
 
         docs_bp = create_docs_blueprint(
             import_name=self.import_name,

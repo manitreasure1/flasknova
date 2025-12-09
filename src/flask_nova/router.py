@@ -8,7 +8,7 @@ import os
 from .responses import ResponseSerializer
 from .route_refactor import RouteFactory
 
-class NovaBluePrint(_Blueprint):
+class NovaBlueprint(_Blueprint):
     """
     #### Example:
     ```python
@@ -56,7 +56,7 @@ class NovaBluePrint(_Blueprint):
                 Defaults to `'static'` in the application root.
                 """
             ),
-        ] = "static",
+        ] = None,
         static_host: Annotated[
             str | None,
             Doc(

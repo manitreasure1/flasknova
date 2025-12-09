@@ -67,7 +67,8 @@ def create_docs_blueprint(
         <head>
             <title>{{ title }}</title>
             <meta charset="utf-8"/>
-            <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+            <link rel="icon" type="image/png" href="https://favicon.pub/redocly.com">
+            <script type="module" src="https://cdn.redoc.ly/redoc/v3.0.0-rc.0/redoc.standalone.js"> </script>
         </head>
         <body>
             <redoc spec-url="{{ openapi_url }}"></redoc>

@@ -7,7 +7,7 @@ from flask import request
 from .utils import filter_options
 from .responses import _bind_route_parameters, ResponseSerializer
 from . import types as nt
-from .router import NovaBluePrint
+
 from .di import resolve_dependencies
 
 class RouteFactory:
@@ -16,7 +16,7 @@ class RouteFactory:
 
     def build(
             self,
-            owner: NovaBluePrint,
+            owner,
             rule: str,
             methods: t.List[nt.Method],
             tags: t.Optional[t.List[t.Union[str, Enum]]],

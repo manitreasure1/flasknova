@@ -55,9 +55,9 @@ async def async_hello(user=cast(dict, Depend(get_async_user))):
 # === Tests ===
 class FlaskNovaTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = FlaskNova(__name__)
+        self.app = FlaskNova(import_name="mani", version="1.1.2")
         self.app.register_blueprint(bp)
-        self.app.setup_swagger()  # enable Swagger UI
+
         self.client = self.app.test_client()
 
     def test_hello_route(self):
