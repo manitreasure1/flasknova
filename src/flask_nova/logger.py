@@ -11,7 +11,7 @@ class AnsiColorFormatter(logging.Formatter):
     }
     RESET_CODE = "\033[0m"
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord)-> str:
         color = self.COLOR_CODES.get(record.levelno, self.RESET_CODE)
         message = super().format(record)
         return f"{color}{message}{self.RESET_CODE}"

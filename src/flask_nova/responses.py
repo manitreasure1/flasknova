@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, get_origin, get_args
+from typing import Any, Callable, Dict, Tuple, get_origin, get_args
 from flask import jsonify, make_response, Response as FlaskResponse, Request, g, request
 import dataclasses
 from pydantic import BaseModel, ValidationError
@@ -9,6 +9,8 @@ import inspect
 from .utils import resolve_annotation, _bind_custom_class_form, _bind_dataclass_form, _bind_pydantic_form
 from .di import Depend
 from .multi_part import FormMarker
+
+
 
 class ResponseSerializer:
     """Serialize handler returns into Flask responses."""
@@ -64,7 +66,7 @@ class ResponseSerializer:
                     elif isinstance(data, BaseModel):
                         model_instance = response_model(**data.model_dump())
                     else:
-                        model_instance = response_model(**data)
+                        model_instance = response_model(**data) # type: ignore
                     return make_response(jsonify(serialize_item(model_instance)), status_code)
 
                 return make_response(jsonify(result), 200)
@@ -89,7 +91,7 @@ class ResponseSerializer:
 
         return make_response(jsonify(serialize_item(result)), 200)
 
-    def _extract_data(self, result: Any):
+    def _extract_data(self, result: Any)-> Tuple[Any, ...]:
         return result[0] if isinstance(result, tuple) else result
 
     def _extract_status_code(self, result: Any, default = 200) -> int:
@@ -104,7 +106,7 @@ class ResponseSerializer:
 
 
 
-async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
+async def _bind_route_parameters(func:Callable[...], sig: inspect.Signature, type_hints)-> Dict[str, Any]:
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
     try:
         bound_values = {}
@@ -187,7 +189,7 @@ async def _bind_route_parameters(func, sig: inspect.Signature, type_hints):
                 if request.content_type and request.content_type.startswith("application/json"):
                     try:
                         json_data = request.get_json(force=True)
-                        bound_values[name] = base_type(**json_data)
+                        bound_values[name] = base_type(**json_data) # type: ignore
                     except Exception as e:
                         raise HTTPException(
                             status_code=status.UNPROCESSABLE_ENTITY,

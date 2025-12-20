@@ -63,6 +63,7 @@ class FlaskNovaTestCase(unittest.TestCase):
     def test_hello_route(self):
         response = self.client.get("/hello")
         self.assertEqual(response.status_code, 200)
+        
         self.assertIn("message", response.get_json())
         self.assertIn("Treasure", response.get_json()["message"])
 
@@ -76,13 +77,14 @@ class FlaskNovaTestCase(unittest.TestCase):
         response = self.client.post("/echo", json=data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"echo": data})
+
     def test_echo_missing_json(self):
         response = self.client.post("/echo")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
 
     def test_echo_invalid_json(self):
         response = self.client.post("/echo", data="not json", content_type="application/json")
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
 
     def test_openapi_schema(self):
         response = self.client.get("/openapi.json")

@@ -6,16 +6,26 @@ import importlib
 from pathlib import Path
 from flask import Flask
 from pydantic import BaseModel
-from typing import get_type_hints
-import typing
+from typing import Any, get_type_hints, TypeAlias, Union, get_origin, get_args, List, Dict
+
+
+
+JSONScalar: TypeAlias = str | int | float | bool | None
+
+JSONValue: TypeAlias = Union[
+    JSONScalar,
+    list["JSONValue"],
+    dict[str, "JSONValue"],
+]
+
 
 @click.group()
-def cli():
+def cli() -> None:
     """Flask-Nova CLI utilities."""
     pass
 
 
-def _example_from_type(py_type):
+def _example_from_type(py_type: Any)-> JSONValue:
     if py_type is int:
         return 1
     if py_type is float:
@@ -24,16 +34,16 @@ def _example_from_type(py_type):
         return True
     if py_type is str:
         return "string"
-    origin = typing.get_origin(py_type)
-    args = typing.get_args(py_type)
-    if origin in (list, typing.List):
+    origin = get_origin(py_type)
+    args = get_args(py_type)
+    if origin in (list, List):
         return [_example_from_type(args[0]) if args else "string"]
-    if origin in (dict, typing.Dict):
+    if origin in (dict, Dict):
         return {"key": "value"}
     return "string"
 
 
-def _is_form_default(default) -> bool:
+def _is_form_default(default: Any) -> bool:
     """Detect a Flask-Nova Form default (duck-typing)."""
     if default is inspect._empty:
         return False
@@ -48,17 +58,18 @@ def _is_form_default(default) -> bool:
     return False
 
 
-def _example_from_model(model_cls):
+def _example_from_model(model_cls: Any)->Dict[Any, Any]:
     """Generate example from a Pydantic BaseModel using model_json_schema."""
     if model_cls is None:
         return {}
     try:
         if inspect.isclass(model_cls) and issubclass(model_cls, BaseModel):
             schema = model_cls.model_json_schema()
-            props = schema.get("properties", {})
+            props: Dict[str, dict[str, Any]] = schema.get("properties", {})
             out = {}
             for k, v in props.items():
-                ex = v.get("example") or (v.get("examples") and (v.get("examples")[0] if isinstance(v.get("examples"), list) else v.get("examples")))
+                examples = v.get("examples")
+                ex = (v.get("example") or (examples[0] if isinstance(examples, list) and examples else examples))
                 if ex:
                     out[k] = ex
                 else:
@@ -69,7 +80,7 @@ def _example_from_model(model_cls):
     return {}
 
 
-def _build_example_from_signature(func):
+def _build_example_from_signature(func: Any)-> tuple[dict[str, JSONValue], bool]:
     """
     Return (example_obj, uses_form:bool).
     - example_obj for JSON routes: dict of fields
@@ -113,7 +124,7 @@ def _build_example_from_signature(func):
     return json_body, False
 
 
-def _render_multipart_http(fields: dict) -> str:
+def _render_multipart_http(fields: dict[Any, Any]) -> str:
     """Render a simple multipart body for .http file (with boundary)."""
     boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
     parts = []
@@ -126,7 +137,7 @@ def _render_multipart_http(fields: dict) -> str:
     return "\n".join(parts)
 
 
-def _generate_http_file(app: Flask, output: Path, base_url: str, app_name: str):
+def _generate_http_file(app: Flask, output: Path, base_url: str, app_name: str)-> None:
     http_file = output / f"{app_name}_request.http"
     lines = [f"@baseUrl = {base_url}", ""]
 
@@ -135,7 +146,7 @@ def _generate_http_file(app: Flask, output: Path, base_url: str, app_name: str):
             continue
         view_func = app.view_functions[rule.endpoint]
         example, uses_form = _build_example_from_signature(view_func)
-        methods = [m for m in rule.methods if m not in ("HEAD", "OPTIONS")]
+        methods = [m for m in (rule.methods or set()) if m not in ("HEAD", "OPTIONS")]
         for method in methods:
             lines.append(f"### {rule.endpoint}")
             lines.append(f"{method} {{baseUrl}}{rule.rule}")
@@ -153,7 +164,7 @@ def _generate_http_file(app: Flask, output: Path, base_url: str, app_name: str):
     click.echo(f"Generated HTTP requests in {http_file}")
 
 
-def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str):
+def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str)-> None:
     py_file = output / f"{app_name}_request.py"
     out_lines = ["import requests", "", f"BASE_URL = \"{base_url}\"", ""]
 
@@ -162,7 +173,7 @@ def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str):
             continue
         view_func = app.view_functions[rule.endpoint]
         example, uses_form = _build_example_from_signature(view_func)
-        methods = [m for m in rule.methods if m not in ("HEAD", "OPTIONS")]
+        methods = [m for m in (rule.methods or set()) if m not in ("HEAD", "OPTIONS")]
         for method in methods:
             func_name = f"test_{rule.endpoint}".replace(".", "_")
             out_lines.append(f"def {func_name}():")
@@ -184,7 +195,7 @@ def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str):
 @click.option("--base-url", default="http://127.0.0.1:5000", help="Base URL for requests.")
 @click.option("--output", default=".", type=click.Path(path_type=Path), help="Output directory.")
 @click.option("--format", type=click.Choice(["http", "py", "all"]), default="all")
-def gen(app, base_url, output, format):
+def gen(app, base_url, output, format)-> None:
     """Generate .http and/or .py files for testing routes."""
     module_name, app_name = app.split(":")
     mod = importlib.import_module(module_name)

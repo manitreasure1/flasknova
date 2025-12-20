@@ -23,7 +23,7 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
-Visit `http://localhost:5000/docs` for Swagger UI.
+Visit `http://localhost:5000/docs` for Swagger UI or `http://localhost:5000/redoc` for Redoc UI.
 
 ---
 

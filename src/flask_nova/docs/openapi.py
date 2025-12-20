@@ -1,5 +1,5 @@
 from ..logger import get_flasknova_logger
-from typing import get_type_hints
+from typing import Any, get_type_hints, Dict
 from flask import Flask
 import dataclasses
 import pydantic
@@ -12,21 +12,21 @@ from ..types import FLASK_TO_OPENAPI_TYPES
 def generate_openapi(
     app: Flask,
     title: str,
-    version: str,
+    version: str| None,
     security_schemes=None,
     global_security=None
-):
+)-> Dict[str, Any]:
 
     logger = get_flasknova_logger()
 
 
-    paths = {}
-    components = {"schemas": {}}
+    paths: Dict[Any, Any] = {}
+    components: Dict[str, Dict[str, Any]] = {"schemas": {}}
     info = getattr(app, "_flasknova_openapi_info", None)
 
 
 
-    def is_pydantic_model(annotation):
+    def is_pydantic_model(annotation: Any)-> bool:
         try:
             return (
                 annotation is not None and
@@ -36,10 +36,10 @@ def generate_openapi(
         except ImportError:
             return False
 
-    def is_dataclass_model(annotation):
+    def is_dataclass_model(annotation: Any) -> bool:
         return annotation is not None and isinstance(annotation, type) and dataclasses.is_dataclass(annotation)
 
-    def is_custom_class(annotation):
+    def is_custom_class(annotation: Any) -> bool:
         return (
             annotation is not None and
             isinstance(annotation, type) and

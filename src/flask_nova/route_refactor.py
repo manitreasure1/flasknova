@@ -8,10 +8,14 @@ from .utils import filter_options
 from .responses import _bind_route_parameters, ResponseSerializer
 from . import types as nt
 
+
 from .di import resolve_dependencies
 
+P = t.ParamSpec("P")
+R = t.TypeVar("R")
+
 class RouteFactory:
-    def __init__(self, serializer: ResponseSerializer):
+    def __init__(self, serializer: ResponseSerializer)-> None:
         self.serializer = serializer
 
     def build(
@@ -24,10 +28,10 @@ class RouteFactory:
             summary: t.Optional[str]= None,
             description: t.Optional[str]= None,
             provide_automatic_options: bool | None = None,
-            **options):
+            **options: t.Dict[str, t.Any])-> t.Callable[[nt.T_route], nt.T_route]:
 
 
-        def decorator(func):
+        def decorator(func: nt.T_route)->  nt.T_route:
             is_async = ip.iscoroutinefunction(func)
             sig = ip.signature(func)
             type_hints = t.get_type_hints(func)

@@ -1,22 +1,22 @@
 from typing import Any
-from flask import Blueprint, current_app, jsonify, url_for, render_template_string
+from flask import Blueprint, Response, current_app, jsonify, url_for, render_template_string
 from .openapi import generate_openapi
 
 
 def create_docs_blueprint(
         import_name: str,
-        version: str,
+        version: str| None,
         security_schemes: Any,
         global_security: Any,
         docs_route: str = "/swagger",
         redoc_route: str = "/redoc",
-    ):
+    )-> Blueprint:
 
     docs_bp = Blueprint("docs", __name__)
 
 
     @docs_bp.route("/openapi.json")
-    def openapi_json():
+    def openapi_json()-> Response:
         schema = generate_openapi(
             title=import_name,
             app=current_app,
@@ -30,7 +30,7 @@ def create_docs_blueprint(
 
 
     @docs_bp.route(docs_route)
-    def swagger_ui():
+    def swagger_ui() -> str:
         openapi_url = url_for("docs.openapi_json", _external=False)
 
         return render_template_string("""
@@ -58,7 +58,7 @@ def create_docs_blueprint(
 
 
     @docs_bp.route(redoc_route)
-    def redoc_ui():
+    def redoc_ui() -> str:
         openapi_url = url_for("docs.openapi_json", _external=False)
 
         return render_template_string("""

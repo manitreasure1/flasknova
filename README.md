@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/pypi/v/flask-nova.svg?color=blue" alt="PyPI version">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/Swagger%20UI-Auto-blueviolet" alt="Swagger UI">
+  <img src="https://img.shields.io/badge/ReDoc-Auto-red" alt="ReDoc">
 </p>
 
 # FlaskNova
@@ -16,7 +17,7 @@
 ## 🚀 Features
 
 * ✅ Automatic OpenAPI 3.0 schema generation
-* ✅ Built-in Swagger UI at `/docs` (configurable)
+* ✅ Built-in Swagger UI at `/docs` (configurable), Redoc at `/redoc`
 * ✅ Request validation using Pydantic models
 * ✅ Response model serialization (Pydantic, dataclass, or custom class with `to_dict`)
 * ✅ Docstring-based or keyword-based `summary` and `description` for endpoints
@@ -25,10 +26,10 @@
 * ✅ Configurable via `FLASKNOVA_ENABLED_DOCS` and `FLASKNOVA_SWAGGER_ROUTE` and `FLASKNOVA_REDOC_ROUTE`
 * ✅ Clean modular routing with `NovaBlueprint`
 * ✅ Built-in HTTP status codes (`flasknova.status`)
-* ✅ Optional JWT auth and dependency injection helpers
 * ✅ New: **`Form()` parsing for form data**
 * ✅ New: **`@guard()` decorator for combining multiple decorators (e.g. JWT + roles)**
 * ✅ Minimal boilerplate and highly extensible
+* ✅ **65%** type hints support
 
 ---
 
@@ -37,15 +38,15 @@
 * [Why FlaskNova?](#why-flasknova)
 * [Installation](#installation)
 * [Quick Example](#quick-example)
-* [Route Documentation](#-route-documentation-options)
-* [Typed URL Parameters](#-typed-url-parameters)
-* [Swagger UI](#-enabling-swagger-ui)
-* [Response Models](#-response-models)
-* [Form Parsing](#-form-parsing)
-* [Guard Decorator](#-guard-decorator)
+* [Route Documentation Options](#route-documentation-options)
+* [Typed URL Parameters](#typed-url-parameters)
+* [Enabling Docs UI](#enabling-docs-ui)
+* [Response Models](#response-models)
+* [Form Parsing](#form-parsing)
+* [Guard Decorator](#guard-decorator)
 * [Status Codes](#status-codes)
 * [Error Handling](#error-handling)
-* [Response Serialization](#response-serialization--custom-responses)
+* [Response Serialization & Custom Responses](#response-serialization--custom-responses)
 * [Logging](#logging)
 * [CLI](#cli)
 * [FAQ](#faq)
@@ -104,7 +105,7 @@ Go to [http://localhost:5000/docs](http://localhost:5000/docs) to try it out in 
 
 ---
 
-## 📝 Route Documentation Options
+## Route Documentation Options
 
 ### Using `summary` and `description`:
 
@@ -128,7 +129,7 @@ def hello():
 
 ---
 
-## 🔀 Typed URL Parameters
+## Typed URL Parameters
 
 ```python
 @api.route("/users/<int:user_id>", methods=["GET"])
@@ -140,13 +141,7 @@ Supported: `int`, `float`, `uuid`, `path`, `string` (default).
 
 ---
 
-## 🧪 Enabling Swagger UI
-
-```python
-if __name__ == "__main__":
-    app.setup_swagger()
-    app.run(debug=True)
-```
+## Enabling Docs UI
 
 Environment vars:
 
@@ -158,7 +153,7 @@ Environment vars:
 
 ---
 
-## 🔁 Response Models
+## Response Models
 
 * ✅ Pydantic models
 * ✅ Dataclasses
@@ -179,7 +174,7 @@ def get_profile():
 
 ---
 
-## 📦 Form Parsing
+## Form Parsing
 
 Use `Form()` to handle form data (like FastAPI’s `Form`).
 
@@ -203,7 +198,7 @@ app.register_blueprint(api)
 
 ---
 
-## 🔐 Guard Decorator
+## Guard Decorator
 
 Use `@guard()` to combine multiple decorators (e.g. JWT + roles).
 
@@ -345,20 +340,20 @@ No, Marshmallow is only supported for response serialization.
 
 ---
 
-## 📖 Learn More
+## Learn More
 
 * [Flask Documentation](https://flask.palletsprojects.com/)
 * [Pydantic Docs](https://docs.pydantic.dev/)
 
 ---
 
-## 📚 License
+## License
 
 MIT License
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 * Fork the repo, create your branch from `main`
 * Write tests and keep code clean
@@ -368,7 +363,7 @@ Issues and features: [GitHub Issues](https://github.com/manitreasure1/flasknova/
 
 ---
 
-## 📦 PyPI Release
+## PyPI Release
 
 🔗 [FlaskNova on PyPI](https://pypi.org/project/flask-nova/)
 🔗 [GitHub Release Notes](https://github.com/manitreasure1/flasknova/releases)

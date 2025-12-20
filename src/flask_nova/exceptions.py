@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional, List, Any
 import http
 
 
@@ -6,7 +6,7 @@ class HTTPException(Exception):
     def __init__(
         self,
         status_code: int,
-        detail: Optional[str|list]= None,
+        detail: Optional[str|List[Any]]= None,
         title: Optional[str] = None,
         type_: Optional[str] = None,
         instance: Optional[str] = None
@@ -29,7 +29,7 @@ class HTTPException(Exception):
 
 
 class ResponseValidationError(HTTPException):
-    def __init__(self, detail, original_exception=None, instance: Optional[str] = None):
+    def __init__(self, detail: Optional[str|List]= None, original_exception=None, instance: Optional[str] = None):
         super().__init__(
             status_code=500,
             detail=detail,

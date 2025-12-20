@@ -1,6 +1,6 @@
 import unittest
 from functools import wraps
-from flask_nova import guard, FlaskNova,NovaBlueprint, status, Form
+from flask_nova import  guard, FlaskNova,NovaBlueprint, status, Form
 import json
 from pydantic import BaseModel
 from typing import Annotated
@@ -9,7 +9,7 @@ bp = NovaBlueprint("test", __name__)
 
 def check_jwt(): return True
 def check_role(): return True
-def check_perm(): return False  
+def check_perm(): return False
 
 
 def require_jwt(f):
@@ -121,11 +121,11 @@ class TestFormDependency(unittest.TestCase):
         """Test a form submission with invalid data."""
         data = {
             'name': 'Charlie',
-            'age': 'thirty', 
+            'age': 'thirty',
             'is_active': 'true'
         }
         response = self.client.post("/register-user", data=data)
-        
+
         self.assertEqual(response.status_code, status.UNPROCESSABLE_ENTITY)
         response_data = json.loads(response.data)
         self.assertTrue(any("age" in err["loc"] for err in response_data['detail']))

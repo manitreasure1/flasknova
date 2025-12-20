@@ -22,7 +22,6 @@ class FlaskNova(_Flask):
 
     def __init__(
         self,
-        *,
         import_name: Annotated[
             str,
             Doc(
@@ -33,6 +32,7 @@ class FlaskNova(_Flask):
                 """
             ),
         ],
+        *,
         static_url_path: Annotated[
             str | None,
             Doc(
@@ -150,7 +150,7 @@ class FlaskNova(_Flask):
             ),
         ] = None,
         version: Annotated[
-            str,
+            t.Optional[str],
             Doc(
                 """
                 The API version string.
@@ -161,7 +161,7 @@ class FlaskNova(_Flask):
                     ```
                 """
             ),
-        ],
+        ]= None,
     ) -> None:
         super().__init__(
             import_name,
@@ -186,7 +186,7 @@ class FlaskNova(_Flask):
             self._setup_docs()
 
 
-    def _setup_docs(self):
+    def _setup_docs(self)-> None:
         docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
         redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redoc")
 
@@ -271,7 +271,7 @@ class FlaskNova(_Flask):
         ] = None,
         provide_automatic_options: bool | None = None,
         **options: t.Any,
-    ) -> t.Callable[[nt.DecoratedCallable], nt.DecoratedCallable]:
+    ) -> t.Callable[[nt.T_route], nt.T_route]:
         """
         Register a new route with the specified HTTP methods.
 
@@ -322,7 +322,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the GET endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **GET** endpoint.
 
@@ -365,7 +365,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the POST endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **POST** endpoint.
 
@@ -408,7 +408,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the PUT endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **PUT** endpoint.
 
@@ -451,7 +451,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the DELETE endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **DELETE** endpoint.
 
@@ -494,7 +494,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the PATCH endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **PATCH** endpoint.
 
@@ -537,7 +537,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the HEAD endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register a **HEAD** endpoint.
 
@@ -580,7 +580,7 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the OPTIONS endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
         Decorator to register an **OPTIONS** endpoint.
 

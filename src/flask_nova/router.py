@@ -1,4 +1,3 @@
-from flask.sansio.scaffold import setupmethod
 from typing_extensions import Annotated, Doc
 from flask import Blueprint as _Blueprint
 from . import types as nt
@@ -7,6 +6,7 @@ import typing as t
 import os
 from .responses import ResponseSerializer
 from .route_refactor import RouteFactory
+from .types import RouteHandler
 
 class NovaBlueprint(_Blueprint):
     """
@@ -107,7 +107,7 @@ class NovaBlueprint(_Blueprint):
             ),
         ] = None,
         **kwargs
-    ):
+    )-> None:
 
         super().__init__(
             name,
@@ -144,14 +144,14 @@ class NovaBlueprint(_Blueprint):
         return self.route(
             rule,
             methods=[method],
-            tags=tags,
+            tags=tags if tags else [self.name],
             response_model=response_model,
             summary=summary,
             description=description,
             **options,
         )
 
-    @setupmethod
+
     def route(
         self,
         rule: Annotated[
@@ -201,7 +201,7 @@ class NovaBlueprint(_Blueprint):
         ] = None,
         provide_automatic_options: bool | None = None,
         **options: t.Any,
-    ) -> t.Callable[[nt.DecoratedCallable], nt.DecoratedCallable]:
+    ) -> t.Callable[[nt.T_route], nt.T_route]:
         """
         Register a new route with the specified HTTP methods.
 
@@ -230,7 +230,7 @@ class NovaBlueprint(_Blueprint):
 
 
 
-    @setupmethod
+
     def get( # type: ignore[override]
         self,
         rule: Annotated[
@@ -255,7 +255,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the GET endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **GET** endpoint.
 
@@ -277,7 +277,7 @@ class NovaBlueprint(_Blueprint):
             **options,
         )
 
-    @setupmethod
+
     def post( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the POST endpoint.')],
@@ -299,7 +299,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the POST endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **POST** endpoint.
 
@@ -321,7 +321,7 @@ class NovaBlueprint(_Blueprint):
             **options,
         )
 
-    @setupmethod
+
     def put( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the PUT endpoint.')],
@@ -343,7 +343,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the PUT endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **PUT** endpoint.
 
@@ -366,7 +366,7 @@ class NovaBlueprint(_Blueprint):
         )
 
 
-    @setupmethod
+
     def delete( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the DELETE endpoint.')],
@@ -388,7 +388,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the DELETE endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **DELETE** endpoint.
 
@@ -410,7 +410,7 @@ class NovaBlueprint(_Blueprint):
             **options,
         )
 
-    @setupmethod
+
     def patch( # type: ignore[override]
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the PATCH endpoint.')],
@@ -432,7 +432,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the PATCH endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **PATCH** endpoint.
 
@@ -455,7 +455,7 @@ class NovaBlueprint(_Blueprint):
         )
 
 
-    @setupmethod
+
     def head(
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the HEAD endpoint.')],
@@ -477,7 +477,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the HEAD endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register a **HEAD** endpoint.
 
@@ -499,7 +499,7 @@ class NovaBlueprint(_Blueprint):
             **options,
         )
 
-    @setupmethod
+
     def options(
         self,
         rule: Annotated[str, Doc('URL path (e.g., "/home") for the OPTIONS endpoint.')],
@@ -521,7 +521,7 @@ class NovaBlueprint(_Blueprint):
             Doc("Detailed description of the OPTIONS endpoint (Markdown supported)."),
         ] = "",
         **options: t.Any,
-    ):
+    ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
         Decorator to register an **OPTIONS** endpoint.
 

@@ -16,7 +16,8 @@ from typing import (
 )
 
 
-DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
+
+T_route = TypeVar("T_route", bound=Callable[..., Any])
 
 # HTTP method literal for route decorators
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
