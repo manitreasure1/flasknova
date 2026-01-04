@@ -175,7 +175,16 @@ class FlaskNova(_Flask):
             instance_relative_config,
             root_path,
         )
-        self.register_error_handler(HTTPException, self._handle_http_exception)
+        @self.errorhandler(HTTPException)
+        async def handle_http_exception(error: HTTPException):
+            problem = {
+                "type": error.type,
+                "title": error.title,
+                "status": error.status_code,
+                "detail": error.detail,
+                "instance": error.instance or request.full_path
+            }
+            return jsonify(problem), error.status_code
         self.description = description
         self.version = version
         self.summary = summary
@@ -209,16 +218,6 @@ class FlaskNova(_Flask):
                 else:
                     response.headers['Cache-Control'] = 'no-store'
             return response
-
-    def _handle_http_exception(self, error: HTTPException):
-        problem = {
-            "type": error.type,
-            "title": error.title,
-            "status": error.status_code,
-            "detail": error.detail,
-            "instance": error.instance or request.full_path
-        }
-        return jsonify(problem), error.status_code
 
 
 

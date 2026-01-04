@@ -4,7 +4,7 @@ from flask import request
 from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException, Form
 import asyncio
 from pydantic import BaseModel
-
+import json
 bp = NovaBlueprint("test", __name__)
 
 
@@ -29,7 +29,7 @@ class UserForm(BaseModel):
 
 
 @bp.route("/register-user", methods=["POST"], summary="Register User with Form", description="Accepts form data for user registration.")
-def register_user(user_data: Annotated[UserForm, Form]):
+def register_user(user_data: UserForm =  Form(UserForm)):
     return user_data.model_dump(), status.CREATED
 
 
@@ -41,7 +41,7 @@ def hello(user=cast(dict, Depend(get_user))):
 
 @bp.route("/error", methods=["GET"], summary="Trigger Error", description="Raises an error intentionally")
 def error_route():
-    raise HTTPException(detail="Something went wrong", status_code=400)
+    raise HTTPException(detail="Something went wrong", status_code=status.BAD_REQUEST)
 
 @bp.route("/echo", methods=["POST"], summary="Echo JSON", description="Echoes posted JSON data", response_model=dict)
 def echo(data=cast(dict, Depend(get_json_data))):
@@ -49,7 +49,7 @@ def echo(data=cast(dict, Depend(get_json_data))):
 
 
 @bp.route("/async-hello", methods=["GET"], summary="Async Hello", response_model=dict)
-async def async_hello(user=cast(dict, Depend(get_async_user))):
+def async_hello(user=cast(dict, Depend(get_async_user))):
     return {"message": f"Hello {user['name']}"}, status.OK
 
 # === Tests ===
@@ -63,7 +63,7 @@ class FlaskNovaTestCase(unittest.TestCase):
     def test_hello_route(self):
         response = self.client.get("/hello")
         self.assertEqual(response.status_code, 200)
-        
+
         self.assertIn("message", response.get_json())
         self.assertIn("Treasure", response.get_json()["message"])
 
@@ -134,10 +134,10 @@ class FlaskNovaTestCase(unittest.TestCase):
         response = self.client.post("/register-user", data=data, content_type="application/x-www-form-urlencoded")
 
         self.assertEqual(response.status_code, status.CREATED)
-        # response_data = json.loads(response.data)
-        # self.assertEqual(response_data['name'], "Alice")
-        # self.assertEqual(response_data['age'], 30)
-        # self.assertEqual(response_data['is_active'], True)
+        response_data = json.loads(response.data)
+        self.assertEqual(response_data['name'], "Alice")
+        self.assertEqual(response_data['age'], 30)
+        self.assertEqual(response_data['is_active'], True)
 
 
 if __name__ == "__main__":

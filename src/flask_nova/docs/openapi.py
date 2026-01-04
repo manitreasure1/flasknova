@@ -7,6 +7,19 @@ import inspect
 import re
 from ..di import Depend
 from ..types import FLASK_TO_OPENAPI_TYPES
+from ..multi_part import FormMarker
+
+
+def map_type_to_openapi(py_type: Any) -> Dict[str, Any]:
+    if py_type in (int,):
+        return {"type": "integer"}
+    if py_type in (float,):
+        return {"type": "number"}
+    if py_type in (bool,):
+        return {"type": "boolean"}
+    if getattr(py_type, '__name__', '').lower() == 'uuid':
+        return {"type": "string", "format": "uuid"}
+    return {"type": "string"}
 
 
 def generate_openapi(
@@ -20,26 +33,23 @@ def generate_openapi(
     logger = get_flasknova_logger()
 
 
-    paths: Dict[Any, Any] = {}
-    components: Dict[str, Dict[str, Any]] = {"schemas": {}}
+    paths = {}
+    components = {"schemas": {}}
     info = getattr(app, "_flasknova_openapi_info", None)
 
 
 
-    def is_pydantic_model(annotation: Any)-> bool:
-        try:
-            return (
-                annotation is not None and
-                isinstance(annotation, type) and
-                issubclass(annotation, pydantic.BaseModel)
-            )
-        except ImportError:
-            return False
+    def is_pydantic_model(annotation):
+        return (
+            annotation is not None and
+            isinstance(annotation, type) and
+            issubclass(annotation, pydantic.BaseModel)
+        )
 
-    def is_dataclass_model(annotation: Any) -> bool:
+    def is_dataclass_model(annotation):
         return annotation is not None and isinstance(annotation, type) and dataclasses.is_dataclass(annotation)
 
-    def is_custom_class(annotation: Any) -> bool:
+    def is_custom_class(annotation):
         return (
             annotation is not None and
             isinstance(annotation, type) and
@@ -58,8 +68,12 @@ def generate_openapi(
         summary = getattr(view_func, "_flasknova_summary", None)
         description = getattr(view_func, "_flasknova_description", None)
 
+
+
         doc = inspect.getdoc(view_func)
         doc_summary, doc_description = None, None
+
+
 
         if doc:
             lines = doc.strip().split('\n')
@@ -69,7 +83,7 @@ def generate_openapi(
         sig = inspect.signature(view_func)
 
         type_hints = getattr(view_func, "__annotations__", {})
-        methods = [m for m in (rule.methods or []) if m in {"GET", "POST", "PUT", "DELETE"}]
+        methods = [m for m in (rule.methods or []) if m in {"GET", "POST", "PUT", "DELETE", "PATCH"}]
 
         openapi_path = re.sub(r'<(?:[^:<>]+:)?([^<>]+)>', r'{\1}', rule.rule)
 
@@ -110,22 +124,68 @@ def generate_openapi(
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": (
-                                    {"$ref": f"#/components/schemas/{response_model.__name__}"}
-                                    if response_model and hasattr(response_model, 'model_json_schema')
-                                    else {"type": "object"}
-                                )
+                                "schema": {"type": "object"}
+
                             }
                         }
                     }
                 }
             }
 
+            if response_model and hasattr(response_model, 'model_json_schema'):
+                components["schemas"][response_model.__name__] = response_model.model_json_schema(ref_template="#/components/schemas/{model}")
+                operation["responses"]["200"]["content"]["application/json"]["schema"] = {"$ref": f"#/components/schemas/{response_model.__name__}"}
+
             found_body = False
             for name, param in sig.parameters.items():
-                annotation = type_hints.get(name, param.annotation)
                 if found_body:
+                    break
+                annotation = type_hints.get(name, param.annotation)
+
+                default = param.default
+                is_form = isinstance(default, FormMarker)
+
+
+                if not is_form and (hasattr(default, "type_") or hasattr(default, "model")):
+                    is_form = True
+
+                if is_form:
+                    model_cls = getattr(default, "type_", None) or getattr(default, "model", None)
+                    form_props = {}
+
+                    if model_cls and inspect.isclass(model_cls) and is_pydantic_model(model_cls):
+                        try:
+                            components[model_cls.__name__] = model_cls.model_json_schema(ref_template="#/components/schemas/{model}")
+                        except Exception:
+                            pass
+
+
+                        fields = getattr(model_cls, "model_fields", None) or getattr(model_cls, "__fields__", None) or {}
+                        for fn, finfo in fields.items():
+
+
+                            f_ann = getattr(finfo, "annotation", None) or getattr(finfo, "type", None) or str
+                            form_props[fn] = map_type_to_openapi(f_ann)
+                    else:
+                        form_props[name] = {"type": "string"}
+
+
+
+                    operation["requestBody"] = {
+                        "required": True,
+                        "content": {
+                            "multipart/form-data": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": form_props}
+                            }
+                        },
+                    }
+
+
+                    found_body = True
                     continue
+
                 if is_pydantic_model(annotation):
                     try:
                         schema = annotation.model_json_schema(ref_template="#/components/schemas/{model}")
@@ -187,6 +247,7 @@ def generate_openapi(
                         schema = pyd_model.model_json_schema(ref_template="#/components/schemas/{model}")
                         is_empty = not schema.get('properties')
                         if schema and not is_empty:
+
                             components["schemas"][pyd_model.__name__] = schema
                             operation["requestBody"] = {
                                 "required": True,
@@ -202,9 +263,6 @@ def generate_openapi(
                             logger.warning(f"WARNING: Generated schema for {annotation} is empty: {schema}")
                     except Exception as e:
                         logger.error(f"Failed to create Pydantic model from custom class {annotation}: {e}")
-
-            if response_model and hasattr(response_model, 'model_json_schema'):
-                components["schemas"][response_model.__name__] = response_model.model_json_schema(ref_template="#/components/schemas/{model}")
 
             paths[openapi_path][method.lower()] = operation
 
@@ -225,19 +283,19 @@ def generate_openapi(
     if components["schemas"]:
         openapi["components"] = components
 
-    if security_schemes is None and global_security is None:
-        security_schemes = {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
-        }
-        global_security = [{"BearerAuth": []}]
-
-    if security_schemes and global_security:
+    if security_schemes:
         openapi.setdefault("components", {}).setdefault("securitySchemes", {})
         openapi["components"]["securitySchemes"].update(security_schemes)
+    if global_security:
         openapi["security"] = global_security
 
     return openapi
+
+
+
+
+
+
+
+
+

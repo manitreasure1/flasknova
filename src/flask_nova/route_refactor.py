@@ -52,7 +52,7 @@ class RouteFactory:
                     return bound_values
 
                 try:
-                    result = await f(**bound_values) if is_async else f(**bound_values)
+                    result = await f(**bound_values) 
                 except Exception as e:
                     raise e
 

@@ -1,6 +1,6 @@
 import unittest
 from functools import wraps
-from flask_nova import  guard, FlaskNova,NovaBlueprint, status, Form
+from flask_nova import  FlaskNova,NovaBlueprint, status, Form, guard
 import json
 from pydantic import BaseModel
 from typing import Annotated
@@ -36,12 +36,7 @@ def require_perm(f):
         return f(*args, **kwargs)
     return wrapped
 
-def guard(*guards):
-    def decorator(f):
-        for g in reversed(guards):
-            f = g(f)
-        return f
-    return decorator
+
 
 
 
@@ -54,7 +49,7 @@ class UserForm(BaseModel):
 
 
 @bp.route("/register-user", methods=["POST"], summary="Register User with Form", description="Accepts form data for user registration.")
-def register_user(user_data: Annotated[UserForm, Form()]):
+async def register_user(user_data: Annotated[UserForm, Form()]):
     return user_data.model_dump(), status.CREATED
 
 

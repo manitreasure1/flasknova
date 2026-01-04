@@ -112,7 +112,7 @@ async def _bind_route_parameters(func:Callable[...], sig: inspect.Signature, typ
         bound_values = {}
 
         for name, param in sig.parameters.items():
-            annotation = type_hints.get(name)
+            annotation = param.annotation
             default = param.default
             base_type, dependency = resolve_annotation(annotation, default=default)
 
@@ -146,8 +146,8 @@ async def _bind_route_parameters(func:Callable[...], sig: inspect.Signature, typ
                         title="Empty Form Submission"
                     )
 
-                form_type = dependency.type_
-                if form_type and issubclass(form_type, BaseModel):
+                form_type = dependency.type_ or base_type
+                if form_type and isinstance(form_type, type) and issubclass(form_type, BaseModel):
                     try:
                         bound_values[name] = _bind_pydantic_form(model_class=form_type)
                     except ValidationError as e:
@@ -157,7 +157,7 @@ async def _bind_route_parameters(func:Callable[...], sig: inspect.Signature, typ
                             title="Form Validation Error"
                         )
 
-                elif form_type and dataclasses.is_dataclass(form_type):
+                elif form_type and isinstance(form_type, type) and dataclasses.is_dataclass(form_type):
                     bound_values[name] = _bind_dataclass_form(form_type)
 
                 elif isinstance(form_type, type):
