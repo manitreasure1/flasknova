@@ -19,7 +19,6 @@ def ping():
 app.register_blueprint(api)
 
 if __name__ == "__main__":
-    app.setup_swagger()
     app.run(debug=True)
 ```
 

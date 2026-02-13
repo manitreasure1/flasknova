@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>FlaskNova | The Modern Flask Framework Documentation</title>
+        <meta name="description"
+            content="FlaskNova: A modern Flask extension for automatic OpenAPI schemas, Pydantic validation, and FastAPI-style routing.">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+        <link
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+            rel="stylesheet">
+        <style>
+            :root {
+                --primary: #3b82f6;
+                --secondary: #10b981;
+                --accent: #8b5cf6;
+                --bg: #ffffff;
+                --sidebar-bg: #f8fafc;
+                --text-main: #0f172a;
+                --text-muted: #64748b;
+                --border: #e2e8f0;
+                --code-bg: #0f172a;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                margin: 0;
+                display: flex;
+                color: var(--text-main);
+                background: var(--bg);
+                scroll-behavior: smooth;
+            }
+
+            /* Sidebar Navigation */
+            nav {
+                width: 300px;
+                height: 100vh;
+                background: var(--sidebar-bg);
+                border-right: 1px solid var(--border);
+                position: fixed;
+                padding: 2rem 1.5rem;
+                overflow-y: auto;
+            }
+
+            nav h1 {
+                font-size: 1.5rem;
+                color: var(--primary);
+                margin-bottom: 2rem;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            nav h1 span {
+                font-size: 1.2rem;
+            }
+
+            nav ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            nav li {
+                margin-bottom: 0.5rem;
+            }
+
+            nav a {
+                text-decoration: none;
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                font-weight: 500;
+                display: block;
+                padding: 8px 12px;
+                border-radius: 6px;
+                transition: all 0.2s;
+            }
+
+            nav a:hover {
+                background: #eff6ff;
+                color: var(--primary);
+            }
+
+            nav .sub-menu {
+                margin-left: 1rem;
+                margin-top: 0.25rem;
+                border-left: 1px solid var(--border);
+            }
+
+            /* Main Content */
+            main {
+                margin-left: 300px;
+                flex: 1;
+                padding: 4rem 6rem;
+                max-width: 1100px;
+            }
+
+            section {
+                margin-bottom: 6rem;
+            }
+
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 1.5rem;
+                letter-spacing: -0.02em;
+            }
+
+            h2 {
+                font-size: 2rem;
+                margin-top: 4rem;
+                margin-bottom: 1.5rem;
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 0.5rem;
+            }
+
+            h3 {
+                font-size: 1.5rem;
+                margin-top: 2.5rem;
+                color: var(--primary);
+            }
+
+            p {
+                font-size: 1.1rem;
+                line-height: 1.7;
+                color: #334155;
+            }
+
+            /* Previews & UI Mockups */
+            .preview-box {
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                margin: 2rem 0;
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            }
+
+            .preview-header {
+                background: #f1f5f9;
+                padding: 12px 20px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .preview-content {
+                padding: 20px;
+                background: white;
+            }
+
+            .method-get {
+                background: #61affe;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: bold;
+            }
+
+            .method-post {
+                background: #49cc90;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: bold;
+            }
+
+            /* CLI Formatting */
+            .cli-window {
+                background: #0f172a;
+                color: #f8fafc;
+                padding: 1.5rem;
+                border-radius: 8px;
+                font-family: 'Fira Code', monospace;
+                margin: 1rem 0;
+                font-size: 0.9rem;
+            }
+
+            .cli-line {
+                margin-bottom: 4px;
+            }
+
+            .cli-success {
+                color: #10b981;
+            }
+
+            .cli-info {
+                color: #3b82f6;
+            }
+
+            .github-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: #24292f;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 6px;
+                text-decoration: none;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+            }
+
+            .status-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 1rem 0;
+            }
+
+            .status-card {
+                background: #f8fafc;
+                padding: 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                font-family: monospace;
+                font-size: 0.85rem;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 2rem 0;
+            }
+
+            th,
+            td {
+                text-align: left;
+                padding: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            th {
+                background: #f8fafc;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            /* Journey List */
+            .journey-list {
+                border-left: 2px solid var(--primary);
+                padding-left: 2rem;
+                list-style: none;
+            }
+
+            .journey-item {
+                position: relative;
+                margin-bottom: 2rem;
+            }
+
+            .journey-item::before {
+                content: '';
+                width: 12px;
+                height: 12px;
+                background: var(--primary);
+                border-radius: 50%;
+                position: absolute;
+                left: calc(-2rem - 7px);
+                top: 6px;
+            }
+
+            .info-note {
+                background: #fefce8;
+                border-left: 4px solid #eab308;
+                padding: 1rem;
+                margin: 1rem 0;
+                border-radius: 0 8px 8px 0;
+            }
+
+            .copy-button {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                padding: 4px 12px;
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 4px;
+                font-size: 0.75rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: inherit;
+                z-index: 10;
+                pointer-events: auto
+            }
+
+            .copy-button:hover {
+                background: var(--primary);
+                border-color: var(--primary);
+            }
+
+            .copy-button.copied {
+                background: var(--secondary);
+                border-color: var(--secondary);
+            }
+
+            /* Ensure code blocks don't overlap with the button on small screens */
+            pre[class*="language-"] {
+                padding-top: 2.5rem !important;
+            }
+
+            .mobile-header {
+                display: none;
+                padding: 1rem;
+                background: var(--sidebar-bg);
+                border-bottom: 1px solid var(--border);
+                font-weight: bold;
+                color: var(--primary);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+            }
+
+            @media (max-width: 900px) {
+                .mobile-header {
+                    display: block;
+                }
+            }
+
+            @media (max-width: 900px) {
+
+                /* 1. Hide Sidebar and adjust main margin */
+                nav {
+                    display: none;
+                }
+
+                main {
+                    margin-left: 0;
+                    padding: 2rem 1.5rem;
+                }
+
+                h1 {
+                    font-size: 2.2rem;
+                }
+
+                h2 {
+                    font-size: 1.6rem;
+                }
+
+                table {
+                    display: block;
+                    overflow-x: auto;
+                    white-space: nowrap;
+                }
+
+                .status-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                pre {
+                    font-size: 0.85rem;
+                    overflow-x: auto;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <nav>
+
+
+
+            <p class="badges">
+                <img src="https://static.pepy.tech/badge/flask-nova" alt="Downloads">
+                <img src="https://img.shields.io/pypi/v/flask-nova.svg?color=blue" alt="PyPI version">
+                <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+                <img src="https://img.shields.io/badge/Swagger%20UI-Auto-blueviolet" alt="Swagger UI">
+                <img src="https://img.shields.io/badge/ReDoc-Auto-red" alt="ReDoc">
+            </p>
+            <h1>🚀 FlaskNova</h1>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li>
+                    <a href="#getting-started">Getting Started</a>
+                    <ul class="sub-menu">
+                        <li><a href="#basics">Basics (GET & Routing)</a></li>
+                        <li><a href="#internals">Using Flask Internals</a></li>
+                        <li><a href="#req-res">Request/Response Handling</a></li>
+                        <li><a href="#pydantic-why">Why Pydantic?</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#advanced">Advanced Features</a>
+                    <ul class="sub-menu">
+                        <li><a href="#di">Dependency Injection</a></li>
+                        <li><a href="#guards">The @guard Decorator</a></li>
+                        <li><a href="#errors">Error Handling & Logging</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#integrations">Ecosystem Integrations</a>
+                    <ul class="sub-menu">
+                        <li><a href="#sqlalchemy">Flask-SQLAlchemy CRUD</a></li>
+                        <li><a href="#jwt">Flask-JWT-Extended</a></li>
+                    </ul>
+                </li>
+                <li><a href="#configuration">Configuration</a></li>
+                <li><a href="#cli">CLI Mastery</a></li>
+                <li><a href="#journey">Project Journey</a></li>
+                <li><a href="#links">Links</a></li>
+            </ul>
+        </nav>
+        <header class="mobile-header">
+            🚀 FlaskNova
+        </header>
+
+        <main>
+            <section id="introduction">
+                <h1>Introduction</h1>
+                <p>
+                    <strong>FlaskNova</strong> is a productivity-first framework extension built for the modern Python
+                    era.
+                    It was designed with a single goal: <em>to make API development in
+                        <a href="https://flask.palletsprojects.com/en/stable/" target="_blank"
+                            rel="noopener noreferrer">Flask</a>
+                        as seamless and automated as possible.</em>
+                </p>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 1.5rem 0;">
+                    <span
+                        style="background: #e2e8f0; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Core
+                        Tech:</span>
+                    <a href="https://docs.pydantic.dev/" target="_blank"
+                        style="text-decoration: none; background: #e92063; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;">Pydantic
+                        V2</a>
+                    <a href="https://fastapi.tiangolo.com/" target="_blank"
+                        style="text-decoration: none; background: #05998b; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;">FastAPI
+                        Inspired</a>
+                    <a href="https://www.openapis.org/" target="_blank"
+                        style="text-decoration: none; background: #85ea2d; color: #000; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;">OpenAPI
+                        3.1</a>
+                </div>
+
+                <p>
+                    Heavily inspired by the developer experience of <strong><a href="https://fastapi.tiangolo.com/"
+                            target="_blank">FastAPI</a></strong>, FlaskNova brings modern features to the Flask
+                    ecosystem.
+                    By leveraging <strong><a href="https://docs.pydantic.dev/" target="_blank"
+                            rel="noopener noreferrer">Pydantic</a></strong> for data validation, FlaskNova ensures your
+                    request payloads and response models are strictly typed, validated, and self-documenting.
+                </p>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2.5rem 0;">
+                    <div
+                        style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: #f8fafc; transition: transform 0.2s;">
+                        <h4
+                            style="margin: 0 0 0.75rem 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                            Zero Migration Debt
+                        </h4>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569; line-height: 1.5;">
+                            No need to rewrite your entire legacy Flask app. Get FastAPI-style features while keeping
+                            your existing architecture intact.
+                        </p>
+                    </div>
+
+                    <div
+                        style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: #f8fafc; transition: transform 0.2s;">
+                        <h4
+                            style="margin: 0 0 0.75rem 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                            🔌 Ecosystem Friendly
+                        </h4>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569; line-height: 1.5;">
+                            Fully compatible with your favorite extensions like <strong>Flask-Login</strong>,
+                            <strong>Flask-Admin</strong>, and <strong>Flask-SQLAlchemy</strong>.
+                        </p>
+                    </div>
+
+                    <div
+                        style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: #f8fafc; transition: transform 0.2s;">
+                        <h4
+                            style="margin: 0 0 0.75rem 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                            Blazing Performance
+                        </h4>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569; line-height: 1.5;">
+                            Powered by <strong>Pydantic V2</strong>, offering lightning-fast data validation and
+                            serialization optimized in Rust.
+                        </p>
+                    </div>
+                </div>
+
+
+
+                <p>
+                    Development shouldn't involve manually updating JSON schemas or writing tedious validation logic for
+                    every route.
+                    FlaskNova handles the heavy lifting, providing <strong>automatic OpenAPI documentation</strong>,
+                    <strong>type-safe routing</strong>, and <strong>built-in serialization</strong>.
+                    It transforms Flask from a micro-framework into a robust, full-featured API engine without losing
+                    the simplicity that Flask developers love.
+                </p>
+            </section>
+            <section id="installation">
+                <h2>Installation</h2>
+                <p>Install the core package via pip:</p>
+                <pre><code class="language-bash">pip install flask-nova</code></pre>
+            </section>
+
+            <section id="getting-started">
+                <h2>Getting Started</h2>
+
+                <h3 id="basics">1. Basics: Simple GET Request</h3>
+                <p>Define your routes using the <code>@app.get</code> decorator. FlaskNova automatically populates your
+                    documentation UI.</p>
+
+                <h4>Docstring Support</h4>
+                <p>If you don't provide a <code>summary</code> or <code>description</code>, FlaskNova intelligently
+                    parses your docstring: The first line becomes the <strong>Summary</strong>, and the following lines
+                    become the <strong>Description</strong>.</p>
+
+                <pre><code class="language-python">@app.get("/welcome")
+def welcome():
+    """Welcome User.
+
+    This text will show up as the long description in Swagger/Redoc.
+    """
+    return {"message": "Welcome to FlaskNova!"}</code></pre>
+                <a href="https://github.com/manitreasure1/flask-nova-tutorials"
+                    class="github-link" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-github"></i> Check Sample Code
+                </a>
+
+                <div class="preview-box">
+                    <div class="preview-header">Swagger UI Preview <span>/docs</span></div>
+                    <div class="preview-content">
+                        <div
+                            style="border: 1px solid #61affe; background: #f4f9ff; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <div><span class="method-get">GET</span> <strong
+                                    style="margin-left: 10px;">/welcome</strong></div>
+
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">Welcome User</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 id="internals">2. Respecting Flask Internals</h3>
+                <p>FlaskNova doesn't take away Flask's internals. You can still use <code>make_response</code>,
+                    <code>jsonify</code>, and custom headers exactly as you do in standard Flask.
+                </p>
+                <pre><code class="language-python">from flask import make_response, jsonify
+
+@api.route("/custom", methods=["GET"])
+def custom():
+    data = {"message": "Custom response"}
+    response = make_response(jsonify(data), 201)
+    response.headers['X-Custom-Header'] = 'Value'
+    return response</code></pre>
+
+                <h3 id="req-res">3. Request/Response Handling</h3>
+                <p>Use Pydantic models for validation and serialization. For form data, use the <code>Form()</code>
+                    parser.</p>
+                <pre><code class="language-python">from flasknova import Form, status
+from pydantic import BaseModel
+
+class UserSchema(BaseModel):
+    username: str
+    age: int
+
+@app.post("/register", response_model=UserSchema)
+def register(data: UserSchema = Form(UserSchema)):
+    # Returns 201 Created using semantic status
+    return data, status.CREATED</code></pre>
+
+                <div class="status-grid">
+                    <div class="status-card">status.OK (200)</div>
+                    <div class="status-card">status.CREATED (201)</div>
+                    <div class="status-card">status.BAD_REQUEST (400)</div>
+                    <div class="status-card">status.UNAUTHORIZED (401)</div>
+                </div>
+
+                <h4>Custom Classes</h4>
+                <div class="info-note">
+                    <strong>Note:</strong> When using custom classes for responses, you must implement a
+                    <code>to_dict()</code> method to map how you want the data to be serialized.
+                </div>
+                <pre><code class="language-python">class MyResponse:
+    def __init__(self, val):
+        self.val = val
+
+    def to_dict(self):
+        return {"value": self.val}</code></pre>
+
+                <h3 id="pydantic-why">4. Why Pydantic?</h3>
+                <p>
+                    Unlike standard Flask dictionaries, Pydantic offers:
+                <ul>
+                    <li><strong>Automatic Validation:</strong> Invalid data is rejected with 422 errors before reaching
+                        your code.</li>
+                    <li><strong>IDE Support:</strong> Full autocomplete and type hinting.</li>
+                    <li><strong>Data Casting:</strong> Automatically converts "123" to <code>123</code> for integer
+                        fields.</li>
+                </ul>
+                </p>
+            </section>
+
+            <section id="advanced">
+                <h2>Advanced Features</h2>
+
+                <h3 id="di">Dependency Injection (Depend)</h3>
+                <p>Modularize your logic by injecting dependencies directly into your function signatures.</p>
+                <pre><code class="language-python">from flasknova import Depend
+
+def get_token_header(x_token: str = "secret"):
+    return x_token
+
+@app.get("/secure")
+def secure_route(token = Depend(get_token_header)):
+    return {"token": token}</code></pre>
+
+                <h3 id="guards">The @guard Decorator</h3>
+                <p>Combine multiple security layers or filters into one clean decorator.
+                    <strong>Avoid:</strong> Decorator stacking which makes code hard to read.
+                </p>
+                <pre><code class="language-python">from flask_jwt_extended import jwt_required
+from flask_nova import guard
+
+@app.get("/admin")
+@guard(jwt_required(), admin_only_check)
+def admin_dashboard():
+    return {"data": "confidential"}</code></pre>
+
+                <h3 id="errors">Error Handling & Color Logging</h3>
+                <p>FlaskNova uses a robust <code>HTTPException</code> class to handle errors consistently.</p>
+                <pre><code class="language-python">from flasknova import HTTPException, status
+
+raise HTTPException(
+    status_code=status.NOT_FOUND,
+    detail="User not found",
+    title="Resource Error"
+)</code></pre>
+                <pre><code class="language-python">from flasknova import logger
+logger.info("FlaskNova app started!")</code></pre>
+
+                <div class="cli-window">
+                    <span class="cli-info">[INFO]</span> FlaskNova app started!<br>
+                    <span class="cli-success">[201]</span> POST /register - 0.045s<br>
+                    <span style="color: #f87171;">[ERROR]</span> 422 Unprocessable Entity: "age" must be integer
+                </div>
+            </section>
+
+            <section id="integrations">
+                <h2>Ecosystem Integrations</h2>
+
+                <h3 id="sqlalchemy">Flask-SQLAlchemy (Full CRUD)</h3>
+                <p>A full tutorial on integrating database operations with Nova schemas.</p>
+                <pre><code class="language-python">@app.post("/users")
+def create_db_user(data: UserSchema):
+    new_user = User(username=data.username, age=data.age)
+    db.session.add(new_user)
+    db.session.commit()
+    return new_user # SQLAlchemy object serialized via Nova!</code></pre>
+                <a href="https://github.com/manitreasure1/flask-nova-tutorials"
+                    class="github-link" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-github"></i> View SQL Integration Example
+                </a>
+
+                <h3 id="jwt">Flask-JWT-Extended</h3>
+                <p>Handling Refresh Tokens and Access Tokens with ease using <code>Depend</code>.</p>
+                <pre><code class="language-python">@app.get("/me")
+def get_me(user = Depend(current_user)):
+    return user</code></pre>
+                <a href="https://github.com/manitreasure1/flask-nova-tutorials" class="github-link"
+                    target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-github"></i> View JWT Integration Example
+                </a>
+            </section>
+
+            <section id="configuration">
+                <h2>Configuration</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>FLASKNOVA_ENABLED_DOCS</td>
+                            <td>True</td>
+                            <td>Set to False to hide Swagger/Redoc in production.</td>
+                        </tr>
+                        <tr>
+                            <td>FLASKNOVA_SWAGGER_ROUTE</td>
+                            <td>/docs</td>
+                            <td>Path for Swagger UI.</td>
+                        </tr>
+                        <tr>
+                            <td>FLASKNOVA_REDOC_ROUTE</td>
+                            <td>/redoc</td>
+                            <td>Path for ReDoc.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="cli">
+                <h2>CLI Mastery</h2>
+                <p>Flask-Nova provides a powerful CLI tool to automatically generate artifacts for your routes.</p>
+
+                <h3>Command</h3>
+                <div class="cli-window">
+                    flask-nova gen --app &lt;your_app_path&gt; [OPTIONS]
+                </div>
+
+                <h3>Options</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>--app TEXT</code></td>
+                            <td><strong>Required.</strong> App path, e.g. <code>examples.form_ex:app</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>--format [http|py|all]</code></td>
+                            <td>File format to generate (default: <code>all</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code>--base-url TEXT</code></td>
+                            <td>Base URL for requests (default: <code>http://127.0.0.1:5000</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code>--output PATH</code></td>
+                            <td>Directory to save files (default: current directory)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                Generate both HTTP and Python requests:
+                <div class="cli-window">
+                    $ flask-nova gen --app main:app --format all<br>
+                    <span class="cli-info">[SCAN]</span> 14 routes detected...<br>
+                    <span class="cli-success">[DONE]</span> Created 14 .http requests in ./docs/requests<br>
+                    <span class="cli-success">[DONE]</span> Created 14 pytest scripts in ./tests/gen
+                </div>
+                Generate HTTP requests only flag --output path:
+                <div class="cli-window">
+                    $ flask-nova gen --app examples.form_ex:app --format http --rest<br>
+                </div>
+                Generate Python requests only:
+                <div class="cli-window">
+                    $ flask-nova gen --app examples.form_ex:app --format py<br>
+                </div>
+            </section>
+
+            <section id="journey">
+                <h2>Project Evolution</h2>
+                <p style="margin-bottom: 2rem; color: var(--text-muted);">
+                    FlaskNova has moved fast, evolving from a core routing engine to a full-featured API framework in record time.
+                </p>
+
+                <ul class="journey-list">
+                    <li class="journey-item">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <strong>v0.1.0: The Foundation</strong>
+                            <span style="font-size: 0.7rem; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-weight: 600;">CORE</span>
+                        </div>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569;">
+                            The birth of the <strong>Core Routing Engine</strong>. Launched with automatic OpenAPI schema generation, deep <strong>Pydantic</strong> integration for typed URL parameters, and customizable metadata support.
+                        </p>
+                    </li>
+
+                    <li class="journey-item">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <strong>v0.1.1: Security & Logic</strong>
+                            <span style="font-size: 0.7rem; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-weight: 600;">ENHANCEMENT</span>
+                        </div>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569;">
+                            Introduction of the <code>@guard()</code> decorator for clean middleware handling and <code>Form()</code> parsing for complex payloads. Streamlined configuration by removing <code>set_swagger()</code> in favor of automated discovery.
+                        </p>
+                    </li>
+
+                    <li class="journey-item">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <strong>v0.1.2: Full API Spectrum</strong>
+                            <span style="font-size: 0.7rem; background: #e0f2fe; color: #075985; padding: 2px 8px; border-radius: 12px; font-weight: 600;">ECOSYSTEM</span>
+                        </div>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569;">
+                            Expanded route handling to support the full REST spectrum: <code>GET</code>, <code>POST</code>, <code>PATCH</code>, <code>PUT</code>, and <code>DELETE</code>. Added <strong>ReDocs</strong> support alongside Swagger for beautiful, alternative documentation.
+                        </p>
+                    </li>
+
+                    
+                </ul>
+            </section>
+
+            <section id="links" style="text-align: center; border-top: 1px solid var(--border); padding-top: 3rem;">
+                <h2>Connect & Contribute</h2>
+                <div style="display: flex; gap: 20px; justify-content: center;">
+                    <a href="https://github.com/manitreasure1/flasknova" target="_blank" class="github-link"
+                        style="padding: 15px 30px; font-size: 1.1rem;">
+                        <i class="fab fa-github"></i> GitHub Repository
+                    </a>
+                    <a href="https://pypi.org/project/flask-nova/" target="_blank" class="github-link"
+                        style="background: #3776ab; padding: 15px 30px; font-size: 1.1rem;">
+                        <i class="fas fa-box"></i> PyPI Package
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+
+        <script>
+            document.querySelectorAll('pre').forEach((pre) => {
+
+                const button = document.createElement('button');
+                button.innerText = 'Copy';
+                button.className = 'copy-button';
+
+
+                pre.style.position = 'relative';
+                pre.appendChild(button);
+
+                button.addEventListener('click', async () => {
+                    const code = pre.querySelector('code');
+                    const text = code.innerText;
+
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        button.innerText = 'Copied!';
+                        button.classList.add('copied');
+
+                        setTimeout(() => {
+                            button.innerText = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                    }
+                });
+            });
+        </script>
+    </body>
+
+</html>
