@@ -81,7 +81,7 @@ Visit [http://localhost:5000/docs](http://localhost:5000/docs) to see your API d
 
 
 ## Documentation
-For full usage guides, including Blueprints, Dependency Injection, and CLI tools, please see the [Full Documentation](manitreasure1.github.io/flasknova).
+For full usage guides, including Blueprints, Dependency Injection, and CLI tools, please see the [Full Documentation](https://manitreasure1.github.io/flasknova/).
 
 MIT License | Built by [manitreasure1](https://github.com/manitreasure1)
 
