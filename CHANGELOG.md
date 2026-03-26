@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [1.0.3] - 2026-03-XX
+### Added
+- `render_spa_template` for adding jsx/tsx template (e.g. `render_spa_template("index.jsx")`)
+- `File()` recieving file request
+- `server`, `responses` and `mermaid.js syntax` added to route param
+---
 ## [1.0.2]
 ### Added
 `GET`, `POST`, `PATCH`, `PUT`, `DELETE`, `HEAD`, `OPTIONS` route **Decorator**
@@ -31,5 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.0.3]: https://pypi.org/project/flask-nova/1.0.1/
+[1.0.2]: https://pypi.org/project/flask-nova/1.0.1/
 [1.0.1]: https://pypi.org/project/flask-nova/1.0.1/
 [1.0.0]: https://pypi.org/project/flask-nova/1.0.0/

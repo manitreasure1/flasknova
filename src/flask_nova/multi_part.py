@@ -24,3 +24,8 @@ def guard(*guards: GuardDecorator) -> Callable[[Callable[P, R]], Callable[P, R |
         return decorated
 
     return decorator
+
+
+# todo: add to responses
+def File(multi_part: bool= False):
+    ...

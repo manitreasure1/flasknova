@@ -1,6 +1,6 @@
 import unittest
 from functools import wraps
-from flask_nova import  FlaskNova,NovaBlueprint, status, Form, guard
+from flask_nova import  FlaskNova, NovaBlueprint, status, Form, guard
 import json
 from pydantic import BaseModel
 from typing import Annotated

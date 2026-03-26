@@ -8,8 +8,8 @@ def create_docs_blueprint(
         version: str| None,
         security_schemes: Any,
         global_security: Any,
-        docs_route: str = "/swagger",
-        redoc_route: str = "/redoc",
+        docs_route: str,
+        redoc_route: str,
     )-> Blueprint:
 
     docs_bp = Blueprint("docs", __name__)

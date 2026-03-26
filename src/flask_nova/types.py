@@ -1,4 +1,5 @@
 from __future__ import annotations
+from flask import Response
 
 from typing import (
     Any,
@@ -15,14 +16,10 @@ from typing import (
     Tuple
 )
 
-
-
 T_route = TypeVar("T_route", bound=Callable[..., Any])
 
 # HTTP method literal for route decorators
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
-
-
 
 class NovaResponse(Protocol):
     """HTTP response contract for Nova handlers."""
@@ -42,22 +39,17 @@ RouteReturn = Union[
     float,
     list[Any],
     NovaResponse,
+    Response,
     Tuple[Any, int],
     Tuple[Any, int, Mapping[str, str]],
 ]
-
-
-
 # Sync/async handler types
 SyncRouteHandler = Callable[..., RouteReturn]
 AsyncRouteHandler = Callable[..., Awaitable[RouteReturn]]
 
-
+# todo: allow make_response, jsonify from flask requests
 # A "RouteHandler" can be a sync or async callable (we treat them separately during dispatch)
 RouteHandler = Union[SyncRouteHandler, AsyncRouteHandler]
-
-
-
 
 FLASK_TO_OPENAPI_TYPES = {
     "string": ("string", None),

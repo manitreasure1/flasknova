@@ -2,7 +2,7 @@
 import click
 import inspect
 import json
-import importlib
+from importlib import import_module
 from pathlib import Path
 from flask import Flask
 from pydantic import BaseModel
@@ -198,7 +198,8 @@ def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str)-> 
 def gen(app, base_url, output, format)-> None:
     """Generate .http and/or .py files for testing routes."""
     module_name, app_name = app.split(":")
-    mod = importlib.import_module(module_name)
+    
+    mod = import_module(module_name)
     app_obj = getattr(mod, app_name)
 
     if callable(app_obj) and not isinstance(app_obj, Flask):

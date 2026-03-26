@@ -8,6 +8,7 @@ import os
 from .docs.docs import create_docs_blueprint
 from .exceptions import HTTPException
 
+
 class FlaskNova(_Flask):
     """
     Main entry point for creating a FlaskNova application.
@@ -190,8 +191,8 @@ class FlaskNova(_Flask):
         self.summary = summary
         self.nova_blueprints = NovaBlueprint("nova", import_name)
 
-        swagger_enabled = self.config.get("FLASKNOVA_ENABLED_DOCS", True)
-        if swagger_enabled:
+        _enabled = self.config.get("FLASKNOVA_ENABLED_DOCS", True)
+        if _enabled:
             self._setup_docs()
 
 
@@ -199,11 +200,17 @@ class FlaskNova(_Flask):
         docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
         redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redoc")
 
+        """
+         todo: add  security_schemes and global_security config  dict
+         todo : set _flasknova_openapi_info attr and connect to config dict
+         todo: set jsonSchemaDialect", externalDocs, servers
+        """
+
         docs_bp = create_docs_blueprint(
             import_name=self.import_name,
             version=self.version,
-            security_schemes="",
-            global_security="",
+            security_schemes="", #! schema not set
+            global_security="", #! global security not set
             docs_route=docs_path,
             redoc_route=redoc_route
             )

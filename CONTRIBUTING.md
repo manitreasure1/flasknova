@@ -50,6 +50,11 @@ python -m unittest discover -s tests
 ```
 
 ---
+## ▶️ Running Type Check
+use `mypy` to run type checks
+```bash
+   typecheck
+```
 
 ## 🔀 Submitting Changes
 
