@@ -1,4 +1,4 @@
-
+import sys
 import click
 import inspect
 import json
@@ -198,7 +198,7 @@ def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str)-> 
 def gen(app, base_url, output, format)-> None:
     """Generate .http and/or .py files for testing routes."""
     module_name, app_name = app.split(":")
-    
+    sys.path.insert(0, str(Path.cwd()))
     mod = import_module(module_name)
     app_obj = getattr(mod, app_name)
 
