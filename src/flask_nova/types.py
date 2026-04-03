@@ -12,7 +12,6 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
-    Mapping,
     Tuple
 )
 
@@ -51,7 +50,7 @@ AsyncRouteHandler = Callable[..., Awaitable[RouteReturn]]
 # A "RouteHandler" can be a sync or async callable (we treat them separately during dispatch)
 RouteHandler = Union[SyncRouteHandler, AsyncRouteHandler]
 
-FLASK_TO_OPENAPI_TYPES = {
+FLASK_TO_OPENAPI_TYPES: dict[str, tuple[str, None| str]] = {
     "string": ("string", None),
     "int": ("integer", None),
     "float": ("number", None),

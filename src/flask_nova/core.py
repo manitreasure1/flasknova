@@ -178,7 +178,7 @@ class FlaskNova(_Flask):
         )
         @self.errorhandler(HTTPException)
         async def handle_http_exception(error: HTTPException):
-            problem = {
+            problem: dict[str, t.Any] = {
                 "type": error.type,
                 "title": error.title,
                 "status": error.status_code,
@@ -200,19 +200,24 @@ class FlaskNova(_Flask):
         docs_path = self.config.get("FLASKNOVA_SWAGGER_ROUTE", "/docs")
         redoc_route = self.config.get("FLASKNOVA_REDOC_ROUTE", "/redoc")
 
-        """
-         todo: add  security_schemes and global_security config  dict
-         todo : set _flasknova_openapi_info attr and connect to config dict
-         todo: set jsonSchemaDialect", externalDocs, servers
-        """
+        openapi_info = self.config.get("OPENAPI_INFO", None)
+        json_schema_dialect = self.config.get("JSON_SCHEMA_DIALECT", None)
+        external_docs = self.config.get("EXTERNAL_DOCS", None)
+        servers = self.config.get("SERVERS", None)
+        security_schemes = self.config.get("SECURITY_SCHEMA", None)
+        global_security = self.config.get("GLOBAL_SECURITY", None)
 
         docs_bp = create_docs_blueprint(
             import_name=self.import_name,
             version=self.version,
-            security_schemes="", #! schema not set
-            global_security="", #! global security not set
+            security_schemes=security_schemes,
+            global_security=global_security,
             docs_route=docs_path,
-            redoc_route=redoc_route
+            redoc_route=redoc_route,
+            openapi_info=openapi_info,
+            json_schema_dialect=json_schema_dialect,
+            external_docs=external_docs,
+            servers=servers
             )
         self.register_blueprint(docs_bp)
 
@@ -228,7 +233,7 @@ class FlaskNova(_Flask):
 
 
 
-    def route(
+    def route(  # type: ignore[override]
         self,
         rule: Annotated[
             str,
@@ -276,6 +281,26 @@ class FlaskNova(_Flask):
             Doc("Detailed description of the endpoint (Markdown supported)."),
         ] = None,
         provide_automatic_options: bool | None = None,
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[nt.T_route], nt.T_route]:
         """
@@ -298,6 +323,9 @@ class FlaskNova(_Flask):
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             provide_automatic_options=provide_automatic_options,
             options=options
         )
@@ -327,6 +355,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the GET endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -340,13 +388,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="GET",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -370,6 +421,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the POST endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -383,13 +454,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="POST",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -413,6 +487,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the PUT endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -426,13 +520,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="PUT",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -456,6 +553,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the DELETE endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -469,13 +586,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="DELETE",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -499,6 +619,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the PATCH endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -512,13 +652,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="PATCH",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -542,6 +685,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the HEAD endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -555,13 +718,16 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="HEAD",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -585,6 +751,26 @@ class FlaskNova(_Flask):
             str | None,
             Doc("Detailed description of the OPTIONS endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     )-> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         """
@@ -598,12 +784,15 @@ class FlaskNova(_Flask):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self.nova_blueprints._method_route(
+        return self.nova_blueprints.method_route(
             rule,
             method="OPTIONS",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )

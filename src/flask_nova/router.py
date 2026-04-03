@@ -8,6 +8,7 @@ from .responses import ResponseSerializer
 from .route_refactor import RouteFactory
 from .types import RouteHandler
 
+
 class NovaBlueprint(_Blueprint):
     """
     #### Example:
@@ -106,7 +107,7 @@ class NovaBlueprint(_Blueprint):
                 """
             ),
         ] = None,
-        **kwargs
+        **kwargs: dict[str, t.Any]
     )-> None:
 
         super().__init__(
@@ -124,7 +125,7 @@ class NovaBlueprint(_Blueprint):
         self._serializer = ResponseSerializer()
         self.route_factory = RouteFactory(self._serializer)
 
-    def _method_route( # type: ignore[override]
+    def method_route( # type: ignore[override]
         self,
         rule: str,
         method: nt.Method,
@@ -133,6 +134,9 @@ class NovaBlueprint(_Blueprint):
         response_model: t.Any | None = None,
         summary: str | None = "",
         description: str | None = "",
+        servers: list[str] | None = None,
+        mermaid: str | None = None,
+        responses: dict[str, t.Any] | None = None,
         **options: t.Any,
     ) -> t.Callable[[nt.RouteHandler], nt.RouteHandler]:
         if "methods" in options:
@@ -148,11 +152,14 @@ class NovaBlueprint(_Blueprint):
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
 
-    def route(
+    def route(  # type: ignore[override]
         self,
         rule: Annotated[
             str,
@@ -199,6 +206,26 @@ class NovaBlueprint(_Blueprint):
             t.Optional[str],
             Doc("Detailed description of the endpoint (Markdown supported)."),
         ] = None,
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         provide_automatic_options: bool | None = None,
         **options: t.Any,
     ) -> t.Callable[[nt.T_route], nt.T_route]:
@@ -224,6 +251,9 @@ class NovaBlueprint(_Blueprint):
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             provide_automatic_options=provide_automatic_options,
             options=options,
         )
@@ -254,6 +284,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the GET endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -267,13 +317,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="GET",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -298,6 +351,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the POST endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -311,13 +384,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="POST",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -342,6 +418,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the PUT endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -355,13 +451,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="PUT",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -387,6 +486,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the DELETE endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -400,13 +519,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="DELETE",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -431,6 +553,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the PATCH endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -444,13 +586,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="PATCH",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -476,6 +621,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the HEAD endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -489,13 +654,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="HEAD",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 
@@ -520,6 +688,26 @@ class NovaBlueprint(_Blueprint):
             str | None,
             Doc("Detailed description of the OPTIONS endpoint (Markdown supported)."),
         ] = "",
+        servers: Annotated[
+            t.Optional[list[str]],
+            Doc(
+                """
+                """
+            )
+        ]= None,
+        mermaid:  Annotated[
+            t.Optional[str],
+            Doc(
+                """
+                """
+                ),
+        ] = None,
+        responses:  Annotated[
+            t.Optional[dict[str, t.Any]],
+            Doc("""
+                """
+                ),
+        ] = None,
         **options: t.Any,
     ) -> t.Callable[[RouteHandler], RouteHandler]:
         """
@@ -533,13 +721,16 @@ class NovaBlueprint(_Blueprint):
             description: Markdown description of the endpoint.
             **options: Extra keyword arguments passed to `add_url_rule`.
         """
-        return self._method_route(
+        return self.method_route(
             rule,
             method="OPTIONS",
             tags=tags,
             response_model=response_model,
             summary=summary,
             description=description,
+            servers=servers,
+            mermaid=mermaid,
+            responses=responses,
             **options,
         )
 

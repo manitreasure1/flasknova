@@ -138,3 +138,4 @@ cython_debug/
 # binary file
 .bin
 bin
+.vscode

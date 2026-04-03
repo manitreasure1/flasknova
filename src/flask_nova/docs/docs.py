@@ -1,39 +1,54 @@
 from typing import Any
-from flask import Blueprint, Response, current_app, jsonify, url_for, render_template_string
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    jsonify,
+    url_for,
+    render_template_string,
+)
 from .openapi import generate_openapi
 
 
 def create_docs_blueprint(
-        import_name: str,
-        version: str| None,
-        security_schemes: Any,
-        global_security: Any,
-        docs_route: str,
-        redoc_route: str,
-    )-> Blueprint:
+    import_name: str,
+    version: str | None,
+    security_schemes: Any,
+    global_security: Any,
+    docs_route: str,
+    redoc_route: str,
+    openapi_info: dict[str, Any] |None = None,
+    json_schema_dialect: str | None = None,
+    external_docs: dict[str, Any]| None = None,
+    servers: list[dict[str, str]]| None = None
+
+) -> Blueprint:
 
     docs_bp = Blueprint("docs", __name__)
 
-
     @docs_bp.route("/openapi.json")
-    def openapi_json()-> Response:
+    def openapi_json() -> Response:
         schema = generate_openapi(
             title=import_name,
             app=current_app,
             version=version,
             security_schemes=security_schemes,
-            global_security=global_security
+            global_security=global_security,
+            openapi_info=openapi_info,
+            json_schema_dialect=json_schema_dialect,
+            external_docs=external_docs,
+            servers=servers
+
         )
 
-
         return jsonify(schema)
-
 
     @docs_bp.route(docs_route)
     def swagger_ui() -> str:
         openapi_url = url_for("docs.openapi_json", _external=False)
 
-        return render_template_string("""
+        return render_template_string(
+            """
         <!DOCTYPE html>
         <html>
         <head>
@@ -54,14 +69,17 @@ def create_docs_blueprint(
             </script>
         </body>
         </html>
-        """, openapi_url=openapi_url, title=f"{import_name} - Swagger")
-
+        """,
+            openapi_url=openapi_url,
+            title=f"{import_name} - Swagger",
+        )
 
     @docs_bp.route(redoc_route)
     def redoc_ui() -> str:
         openapi_url = url_for("docs.openapi_json", _external=False)
 
-        return render_template_string("""
+        return render_template_string(
+            """
         <!DOCTYPE html>
         <html>
         <head>
@@ -74,6 +92,9 @@ def create_docs_blueprint(
             <redoc spec-url="{{ openapi_url }}"></redoc>
         </body>
         </html>
-        """, openapi_url=openapi_url, title=f"{import_name} - ReDoc")
+        """,
+            openapi_url=openapi_url,
+            title=f"{import_name} - ReDoc",
+        )
 
     return docs_bp

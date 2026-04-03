@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ValidationError, create_model
-from typing import Type, get_args, get_origin, Annotated, Any, Union, Tuple
+from typing import Type, get_args, get_origin, Annotated, Any, Union, Tuple, Callable
 from .exceptions import HTTPException
 from .di import Depend
 from flask import request
@@ -8,7 +8,7 @@ from .multi_part import FormMarker
 import inspect
 
 
-FLASK_ALLOWED_ROUTE_ARGS = {
+FLASK_ALLOWED_ROUTE_ARGS: set[str] = {
                 "methods", "endpoint", "defaults", "strict_slashes",
                 "redirect_to", "alias", "host", "provide_automatic_options"
             }
@@ -17,7 +17,7 @@ FLASK_ALLOWED_ROUTE_ARGS = {
 ParamDefault = Union[Depend[Any], FormMarker, None, inspect._empty]
 ParamItem = Tuple[str, ParamDefault]
 
-def resolve_annotation(annotation, default=inspect.Parameter.empty)-> ParamItem:
+def resolve_annotation(annotation: Any, default: Any = inspect.Parameter.empty)-> ParamItem:
     if annotation and get_origin(annotation) is Annotated:
         base_type, *extras = get_args(annotation)
         for extra in extras:
@@ -31,8 +31,8 @@ def resolve_annotation(annotation, default=inspect.Parameter.empty)-> ParamItem:
     return annotation, None
 
 
-def _bind_pydantic_form(model_class: type[BaseModel])-> BaseModel:
-    if request.content_type is None or not any(
+def bind_pydantic_form(model_class: type[BaseModel])-> BaseModel:
+    if not request.content_type  or not any(
         request.content_type.startswith(t)
         for t in ["multipart/form-data", "application/x-www-form-urlencoded"]
     ):
@@ -50,7 +50,7 @@ def _bind_pydantic_form(model_class: type[BaseModel])-> BaseModel:
             title="Form Validation Error"
         )
 
-def _bind_dataclass_form(dataclass_class: Type[Any])->Any:
+def bind_dataclass_form(dataclass_class: Type[Any])->Any:
     TempModel = create_model(
         'DataclassFormWrapper',
         data=(dataclass_class, ...)
@@ -67,7 +67,7 @@ def _bind_dataclass_form(dataclass_class: Type[Any])->Any:
         )
 
 
-def _bind_custom_class_form(custom_class: Type[Any])-> Any:
+def bind_custom_class_form(custom_class: Type[Any])-> Any:
     try:
         form_data = request.form.to_dict()
         return custom_class(**form_data)
@@ -79,7 +79,7 @@ def _bind_custom_class_form(custom_class: Type[Any])-> Any:
         )
 
 
-def filter_options(func, **options) -> dict[str, Any]:
+def filter_options(func: Callable[..., Any], **options: dict[str, Any]) -> dict[str, Any]:
     flask_options = {
                 k: v for k, v in options.items() if k in FLASK_ALLOWED_ROUTE_ARGS
             }

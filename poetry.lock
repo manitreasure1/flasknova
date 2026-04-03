@@ -116,68 +116,6 @@ files = [
 markers = {main = "platform_system == \"Windows\"", dev = "sys_platform == \"win32\""}
 
 [[package]]
-name = "esbuild-py"
-version = "0.1.6"
-description = "Python bindings to the esbuild Transform API"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "esbuild_py-0.1.6-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:db746f1537ff95b7b0876feff1c37dc3cfabc1c75dca7f0c1aede6ff2facf807"},
-    {file = "esbuild_py-0.1.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:920daca69e9a1214e391e06a06a9316d7dbbc835adb7ba957790f449204ce990"},
-    {file = "esbuild_py-0.1.6-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:b08235eb1e0f89df7fe2f1557744bd9786ac271817f7feefd0eb7e7bec4c9170"},
-    {file = "esbuild_py-0.1.6-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:388f5539fa95c263149d788c3ae07e48d2ce1816fc678c4bd3e9d48976f60e0e"},
-    {file = "esbuild_py-0.1.6-cp310-cp310-win32.whl", hash = "sha256:7b0057d677e3c1d548535ee4843d38f7295a363f2324464d4f530960a454ae3d"},
-    {file = "esbuild_py-0.1.6-cp310-cp310-win_amd64.whl", hash = "sha256:9edf0b126478970b45904a4b012cf7a737c97ab55141115b7e1f44c507fab484"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:4c1ea504b67de3ffc3af00b70beed3215fcbdbe84b4516bb46c615e44944041a"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:cde760a0b811172b5506ff401ea71a8ba5f8767af3997b56208bbcb48ff1f706"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:d0836d9e03224954b14bae3192d8edf2144cdc0e5669a669a371660251e99eae"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:06dd66ae7fd40e9720251374c55c23b10c1b811babdb089c8bf4dc7ef65eccc2"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-win32.whl", hash = "sha256:98f8119e2935cf96ae4ba1fd0fb64627773cb8bdfba18242dfa018fe4ff59c25"},
-    {file = "esbuild_py-0.1.6-cp311-cp311-win_amd64.whl", hash = "sha256:947f6c0b7e55f0aa8dbe33da4afd17de1bf6b5e89c28ebfaf5ddbe17288bf52e"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:412fb3ebfcb9da69b6a2a142d25268011c8661f2fd7c202cecb3bddd741e405d"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:72e6e6ff196a6ae84cc4c069658e4ab5625e0c45b5836fc32bfddc9ae7dc1502"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:6e6f2b34de9e6344a52d8f5d1d9a1515c535af6dd039da27e17131affd6ade73"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7213788a64785bd2ff820771ee1e7fdfe12dd3155c1b210f48961b1c7c2e2634"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-win32.whl", hash = "sha256:13efcb1e9f21c7ff33371549f91035d80c277b4372a61dcf34855befba04e034"},
-    {file = "esbuild_py-0.1.6-cp312-cp312-win_amd64.whl", hash = "sha256:e6c04e81f3504a21c8168c5b2e52bd8f95dd0363f08bfbb505f1e787baa5989c"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:91f4dfd36bcf0333a5bf326045aa1c4d2570b74e7b5cf453374540ab3a6a3589"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:599ca77ba9c5ac8892b07534ca177594a58252a9d1166ba5ff1799ca28112577"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:59c7f513a365e8e760a75c05b269c187c211e6edf32b32f3337a39b1f3489baf"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:e53bce071038b135caa0a49efdb03fa0165ffe1bb6a879febe9f61e9645e2ac0"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-win32.whl", hash = "sha256:e7b3e62edad306becd14530ef6bda844ea198a7b3d27fddec6769d7041585bb5"},
-    {file = "esbuild_py-0.1.6-cp313-cp313-win_amd64.whl", hash = "sha256:41879671ca9552141621bc905bcf8d5b809b31616991a1fe2059de4753a551e8"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:0950cebcfe6ee8f8d90cc67b4e05fa94e6e29bc379be230bc08fa97224951ad1"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:b33ab85aa093870bfb4e708a4a1923fb3addce0fd5952d36066c49b9dfc4aaa2"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:f6bfdd2986372833b04dfd1cba85cc3efab858304993f3814e418a2d294a576e"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:94246fedf023d9ef977ebd4ea7d187a04bbb09e250180fedc5b4dc8948e7a162"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-win32.whl", hash = "sha256:2f38061e58b1c8253f0c88e289c76b46ad0bcf32de0b7ec8fa5bf88751906e1e"},
-    {file = "esbuild_py-0.1.6-cp314-cp314-win_amd64.whl", hash = "sha256:5d3ee1aec88c2e461640d853e3132d726ae8d257cb534f761898f4230fd8110f"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:e2434bc06ad78558098ba350d499fef35a32645cd94e347b433be649043cabf5"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:7eec2898d8a2ed32966ce8b1a2cd4aa28070610edae498d55ff42f434130ddc9"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:18c2e8f199b9808728d81ca5890932d2c99271d9a7986e7cde8289d6fc1539ea"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:c18990d78c02f9701679fe92fd0fc8ceb8f6b1229b510bcdeb07354749388376"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-win32.whl", hash = "sha256:062218b56bb9af62f4440472172ae2f871b151182079448ed473604d962642e3"},
-    {file = "esbuild_py-0.1.6-cp314-cp314t-win_amd64.whl", hash = "sha256:38d696c1e4422a2af62f1b05ef90b7bc8bc6f2ba1a94fccbecccc7215215dac9"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:2529864da6d1a7743892903c4b7662e2bbb1c3602d9e6e018d7a785933da2bfe"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:99f3835bf6d81b78997d460d4cf2b529035836aa8fb1c4aebf1696ba15c8d38c"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:251ed42c2986f2db828692d03b7fb772f2bf789491b7ae1cfc47f2d85dfe4e44"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:8c83226e3787bd2661463deb4c572d5d0ba9e4025ea618173d285e97a5ef698b"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-win32.whl", hash = "sha256:74d5a03b9fb13509c81d7410dad23a48e3427d0bd90cbb98bf4d739caef074d7"},
-    {file = "esbuild_py-0.1.6-cp38-cp38-win_amd64.whl", hash = "sha256:5429fab182326c3a36f88ad44dd19ad0e977d4df3214968ee1d2630e2dff75c7"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:e660437320728ff84f732ebd5dd1ab96fb3c859a72ee9285bfec37d7ee3ac880"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:3d7fec90a7e7faf65c1bfb604de7fe32656de10c5447f9973eacffa0fa0234d6"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:9b834f9fd929999357ac39420155a975f8cedefe4b47a8eb537abaee09c3509b"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:f251a5f59c3986341b74abdce38032f5e0826c000e517783d14c26fb8d5d75e0"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-win32.whl", hash = "sha256:2e6c0e8f0176e4684774253ff1bca59fe4ce08ddacdce326ad25fce343eb7342"},
-    {file = "esbuild_py-0.1.6-cp39-cp39-win_amd64.whl", hash = "sha256:ae8094878914e55a7166890c85f40c36ada7a688dc16fe82eb097cc9c222ad01"},
-    {file = "esbuild_py-0.1.6.tar.gz", hash = "sha256:9771b54bda34b64e16b50faefa938fe27aa30c1c69a952261272fd1a04427411"},
-]
-
-[package.extras]
-dev = ["build (==0.1.0)", "coverage (>=6.3.2)", "flake8 (==3.8.4)", "pytest (>=6.2.4)"]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.3.1"
 description = "Backport of PEP 654 (exception groups)"
@@ -903,4 +841,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "00d56ce759af6d03b5787bcfc4c10360d068b1d59b9a03b89041f03c3eb2bcc8"
+content-hash = "7a82eecdfc83e156accdeed0994244ae2f30087a16b87ec2ccca483dc159f4ef"

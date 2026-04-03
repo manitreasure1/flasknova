@@ -127,7 +127,7 @@ def _build_example_from_signature(func: Any)-> tuple[dict[str, JSONValue], bool]
 def _render_multipart_http(fields: dict[Any, Any]) -> str:
     """Render a simple multipart body for .http file (with boundary)."""
     boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
-    parts = []
+    parts: list[str] = []
     for k, v in fields.items():
         parts.append(f"--{boundary}")
         parts.append(f'Content-Disposition: form-data; name="{k}"')
@@ -195,7 +195,7 @@ def _generate_py_file(app: Flask, output: Path, base_url: str, app_name: str)-> 
 @click.option("--base-url", default="http://127.0.0.1:5000", help="Base URL for requests.")
 @click.option("--output", default=".", type=click.Path(path_type=Path), help="Output directory.")
 @click.option("--format", type=click.Choice(["http", "py", "all"]), default="all")
-def gen(app, base_url, output, format)-> None:
+def gen(app: str, base_url: str, output: str, format: str)-> None:
     """Generate .http and/or .py files for testing routes."""
     module_name, app_name = app.split(":")
     sys.path.insert(0, str(Path.cwd()))

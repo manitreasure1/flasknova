@@ -8,9 +8,9 @@ from .status import status
 import inspect
 from .utils import (
     resolve_annotation,
-    _bind_custom_class_form,
-    _bind_dataclass_form,
-    _bind_pydantic_form,
+    bind_custom_class_form,
+    bind_dataclass_form,
+    bind_pydantic_form,
 )
 from .di import Depend
 from .multi_part import FormMarker
@@ -22,7 +22,7 @@ class ResponseSerializer:
     def serialize(
         self, result: Any, response_model: Any | None, flask_request: Request
     ) -> FlaskResponse:
-        def serialize_item(item: Any):
+        def serialize_item(item: Any) -> Any:
             if isinstance(item, tuple):
                 return serialize_item(item[0])
             if isinstance(item, (str, bytes)):
@@ -43,7 +43,6 @@ class ResponseSerializer:
 
         # Already a Flask Response -> return as is
         if isinstance(result, FlaskResponse):
-            # todo: validate fields according to the response_model schema
             res = _response_model(
                 self, response_model, result, serialize_item, flask_request
             )
@@ -58,8 +57,8 @@ class ResponseSerializer:
 
         # Fallback
         if isinstance(result, tuple):
-            data = self._extract_data(result)
-            status_code = self._extract_status_code(result)
+            data = self.extract_data(result)
+            status_code = self.extract_status_code(result)
             return make_response(jsonify(serialize_item(data)), status_code)
 
         # Ensures str/bytes are wrapped
@@ -68,10 +67,10 @@ class ResponseSerializer:
 
         return make_response(jsonify(serialize_item(result)), 200)
 
-    def _extract_data(self, result: Any) -> Tuple[Any, ...]:
+    def extract_data(self, result: Any) -> Tuple[Any, ...]:
         return result[0] if isinstance(result, tuple) else result
 
-    def _extract_status_code(self, result: Any, default=200) -> int:
+    def extract_status_code(self, result: Any, default: int = 200) -> int:
         if isinstance(result, tuple):
             possible_status = result[1] if len(result) > 1 else default
             if (
@@ -86,8 +85,10 @@ class ResponseSerializer:
 
 
 # todo : add File request
-async def _bind_route_parameters(
-    func: Callable[...], sig: inspect.Signature, type_hints
+async def bind_route_parameters(
+    func: Callable[..., Any],
+    sig: inspect.Signature,
+    type_hints: Any
 ) -> Dict[str, Any]:
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
     try:
@@ -111,7 +112,7 @@ async def _bind_route_parameters(
                 continue
 
             if isinstance(dependency, FormMarker):
-                if request.content_type is None or not any(
+                if not request.content_type is None or not any(
                     request.content_type.startswith(t)
                     for t in [
                         "multipart/form-data",
@@ -138,7 +139,7 @@ async def _bind_route_parameters(
                     and issubclass(form_type, BaseModel)
                 ):
                     try:
-                        bound_values[name] = _bind_pydantic_form(model_class=form_type)
+                        bound_values[name] = bind_pydantic_form(model_class=form_type)
                     except ValidationError as e:
                         raise HTTPException(
                             status_code=status.UNPROCESSABLE_ENTITY,
@@ -151,10 +152,10 @@ async def _bind_route_parameters(
                     and isinstance(form_type, type)
                     and dataclasses.is_dataclass(form_type)
                 ):
-                    bound_values[name] = _bind_dataclass_form(form_type)
+                    bound_values[name] = bind_dataclass_form(form_type)
 
                 elif isinstance(form_type, type):
-                    bound_values[name] = _bind_custom_class_form(form_type)
+                    bound_values[name] = bind_custom_class_form(form_type)
 
                 else:
                     bound_values[name] = form_data
@@ -242,19 +243,22 @@ async def _bind_route_parameters(
                 try:
                     if value is not None and base_type is not None:
                         if base_type is bool:
-                            value = str(value).lower() in ("true", "1", "yes", "on")
+                            value = str(value).lower() in ("true", "1", "yes", "on")  # type: ignore
                         else:
-                            value = base_type(value)
+                            value = base_type(value)  # type: ignore
                 except Exception:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Parameter '{name}' must be of type {base_type.__name__}",
+                        detail=f"Parameter '{name}' must be of type {base_type.__name__}",  # type: ignore
                     )
                 bound_values[name] = value
                 continue
             bound_values[name] = request
 
         return bound_values
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(
@@ -277,24 +281,29 @@ def _response_model(
         origin = get_origin(response_model)
         args = get_args(response_model)
         if origin is list and args:
-            data = self._extract_data(result)
-            status_code = self._extract_status_code(result)
-            data = list(data) if not isinstance(data, list) else data
+            raw_data = self.extract_data(result)
+            status_code = self.extract_status_code(result)
+            data_list = list(raw_data) if not isinstance(raw_data, list) else raw_data
             return make_response(
-                jsonify([serialize_item(item) for item in data]), status_code
+                jsonify([serialize_item(item) for item in data_list]), status_code
             )
         if origin is tuple and args:
-            data = self._extract_data(result)
-            status_code = self._extract_status_code(result)
-            if not isinstance(data, tuple):
-                data = (data,)
+            raw_data = self.extract_data(result)
+            status_code = self.extract_status_code(result)
+            if isinstance(raw_data, tuple):
+                data_tuple = raw_data
+            else:
+                if hasattr(raw_data, '__iter__') and not isinstance(raw_data, (str, bytes)):
+                    data_tuple = tuple(raw_data)  # type: ignore
+                else:
+                    data_tuple = (raw_data,)
             return make_response(
-                jsonify([serialize_item(item) for item in data]), status_code
+                jsonify([serialize_item(item) for item in data_tuple]), status_code
             )
 
         if origin is None and isinstance(response_model, type):
-            data = self._extract_data(result)
-            status_code = self._extract_status_code(result)
+            data = self.extract_data(result)
+            status_code = self.extract_status_code(result)
             if isinstance(data, response_model):
                 model_instance = data
             elif isinstance(data, BaseModel):

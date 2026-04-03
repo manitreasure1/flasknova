@@ -22,7 +22,6 @@ def guard(*guards: GuardDecorator) -> Callable[[Callable[P, R]], Callable[P, R |
         for g in reversed(guards):
             decorated = g(decorated)
         return decorated
-
     return decorator
 
 

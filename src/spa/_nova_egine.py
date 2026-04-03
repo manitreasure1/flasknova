@@ -3,7 +3,7 @@ import platform
 import urllib.request
 import tarfile
 import subprocess
-import os
+# import os
 from typing import Annotated, Literal, final
 from typing_extensions import Doc
 from flask_nova.logger import get_flasknova_logger
@@ -215,7 +215,7 @@ class EsbuildWrapper:
             return False
 
 
-def get_esbuild_binary(version="0.27.4", target_dir="./bin"):
+def get_esbuild_binary(version: str ="0.27.4", target_dir: str ="./bin"):
     system = platform.system().lower()
     arch = platform.machine().lower()
     pkg_map = {

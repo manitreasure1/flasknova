@@ -1,5 +1,5 @@
 import unittest
-from typing import cast, Annotated
+from typing import cast, Any
 from flask import request
 from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException, Form
 import asyncio
@@ -36,7 +36,7 @@ def register_user(user_data: UserForm =  Form(UserForm)):
 
 # === Routes ===
 @bp.route("/hello", methods=["GET"], tags=["Greeting"], summary="Say Hello", description="Returns a hello message", response_model=dict)
-def hello(user=cast(dict, Depend(get_user))):
+def hello(user=cast(dict[str, Any], Depend(get_user))):
     return {"message": f"Hello {user['name']}"}, status.OK
 
 @bp.route("/error", methods=["GET"], summary="Trigger Error", description="Raises an error intentionally")
@@ -119,7 +119,7 @@ class FlaskNovaTestCase(unittest.TestCase):
             self.assertIn("TestUser", response.get_json()["message"])
 
     async def test_async_hello(self):
-        response = self.client.get("/async-hello")
+        response = await self.client.get("/async-hello")
         self.assertEqual(response.status_code, 200)
         self.assertIn("AsyncTreasure", response.get_json()["message"])
 

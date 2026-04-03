@@ -27,9 +27,6 @@ packages = [
     { include = "flask_nova", from = "src" }
     ]
 
-[tool.poetry.spa]
-spa = ["spa"]
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

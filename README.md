@@ -22,15 +22,17 @@
 * Request validation using Pydantic models
 * Response model serialization (Pydantic, dataclass, or custom class with `to_dict`)
 * Docstring-based or keyword-based `summary` and `description` for endpoints
+* `route_servers`, `mermaid`, `responses` route parameters
 * Typed URL parameters (`<int:id>`, `<uuid:id>`, etc.)
 * Customizable Swagger UI and Redoc route path and OpenAPI metadata
-* Configurable via `FLASKNOVA_ENABLED_DOCS` and `FLASKNOVA_SWAGGER_ROUTE` and `FLASKNOVA_REDOC_ROUTE`
+* Configurable via `FLASKNOVA_ENABLED_DOCS`, `FLASKNOVA_SWAGGER_ROUTE`, `FLASKNOVA_REDOC_ROUTE`, `OPENAPI_INFO`, `JSON_SCHEMA_DIALECT`, `EXTERNAL_DOCS`, `SERVERS`, `SECURITY_SCHEMA`, `GLOBAL_SECURITY`
 * Clean modular routing with `NovaBlueprint`
 * Built-in HTTP status codes (`flasknova.status`)
 * **`Form()` parsing for form data**
+* **`File()` parsing for file data**
 * **`@guard()` decorator for combining multiple decorators (e.g. JWT + roles)**
 * **Cli** command for generating `.http` and `.py` routes endpoints and validation data types
-* **65%** type hints support
+* type hints support
 
 ---
 
