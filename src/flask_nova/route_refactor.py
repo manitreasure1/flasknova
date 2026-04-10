@@ -7,8 +7,7 @@ from .utils import filter_options
 from .responses import bind_route_parameters, ResponseSerializer
 from . import types as nt
 from .di import resolve_dependencies
-from typing import Any
-
+from .exceptions import HTTPException
 
 
 P = t.ParamSpec("P")
@@ -21,7 +20,7 @@ class RouteFactory:
 
     def build(
         self,
-        owner: Any,
+        owner: t.Any,
         rule: str,
         methods: t.List[nt.Method],
         tags: t.Optional[t.List[t.Union[str, Enum]]],
@@ -50,15 +49,17 @@ class RouteFactory:
             setattr(f, "_flasknova_mermaid", mermaid)
 
             @ft.wraps(f)
-            async def handler(*args: t.Any , **kwargs: dict[str, t.Any]):
+            async def handler(*args: t.Any, **kwargs: dict[str, t.Any]):
                 bound_values = await bind_route_parameters(f, sig, type_hints)
                 if isinstance(bound_values, tuple):
                     return bound_values
 
                 try:
                     result = await f(**bound_values)
+                except HTTPException:
+                    raise
                 except Exception as e:
-                    raise e
+                    raise HTTPException(status_code=500, detail=str(e))
 
                 return self.serializer.serialize(result, response_model, request)
 

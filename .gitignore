@@ -138,4 +138,10 @@ cython_debug/
 # binary file
 .bin
 bin
+
+# others
 .vscode
+.dist
+*/skills
+/imgs
+*/spa_ex

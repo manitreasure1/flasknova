@@ -12,8 +12,18 @@ class FormMarker:
         self.type_ = type_
 
 
+class FileMarker(FormMarker):
+    def __init__(self, type_: type | None = None, multiple: bool = False):
+        super().__init__(type_)
+        self.multiple = multiple
+
+
 def Form(type_: type | None = None) -> Any:
     return FormMarker(type_)
+
+
+def File(type_: type | None = None, multiple: bool = False) -> Any:
+    return FileMarker(type_, multiple=multiple)
 
 
 def guard(*guards: GuardDecorator) -> Callable[[Callable[P, R]], Callable[P, R | Response]]:
@@ -24,7 +34,3 @@ def guard(*guards: GuardDecorator) -> Callable[[Callable[P, R]], Callable[P, R |
         return decorated
     return decorator
 
-
-# todo: add to responses
-def File(multi_part: bool= False):
-    ...

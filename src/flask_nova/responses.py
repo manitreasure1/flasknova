@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Any, Callable, Dict, Tuple, get_origin, get_args
-from flask import jsonify, make_response, Response as FlaskResponse, Request, g, request
+from typing import Any, Callable, Dict, get_origin, get_args
+from flask import jsonify, make_response, Response as FlaskResponse, Request, request
 import dataclasses
 from pydantic import BaseModel, ValidationError
 from .exceptions import HTTPException
@@ -13,7 +13,7 @@ from .utils import (
     bind_pydantic_form,
 )
 from .di import Depend
-from .multi_part import FormMarker
+from .multi_part import FileMarker, FormMarker
 
 
 class ResponseSerializer:
@@ -23,22 +23,26 @@ class ResponseSerializer:
         self, result: Any, response_model: Any | None, flask_request: Request
     ) -> FlaskResponse:
         def serialize_item(item: Any) -> Any:
-            if isinstance(item, tuple):
-                return serialize_item(item[0])
-            if isinstance(item, (str, bytes)):
-                return item
-            if hasattr(item, "model_dump"):
-                return item.model_dump()
-            if hasattr(item, "dict"):
-                return item.dict()
-            if hasattr(item, "dump"):
-                return item.dump()
-            if hasattr(item, "to_dict") and callable(getattr(item, "to_dict", None)):
-                return item.to_dict()
-            if dataclasses.is_dataclass(item) and not isinstance(item, type):
-                return dataclasses.asdict(item)
-            if isinstance(item, dict):
-                return item
+            rules: list[tuple[Callable[[Any], bool], Callable[[Any], Any]]] = [
+                (lambda value: isinstance(value, tuple), lambda value: serialize_item(value[0])),
+                (lambda value: isinstance(value, (str, bytes)), lambda value: value),
+                (lambda value: hasattr(value, "model_dump"), lambda value: value.model_dump()),
+                (lambda value: hasattr(value, "dict"), lambda value: value.dict()),
+                (lambda value: hasattr(value, "dump"), lambda value: value.dump()),
+                (
+                    lambda value: hasattr(value, "to_dict")
+                    and callable(getattr(value, "to_dict", None)),
+                    lambda value: value.to_dict(),
+                ),
+                (
+                    lambda value: dataclasses.is_dataclass(value) and not isinstance(value, type),
+                    lambda value: dataclasses.asdict(value),
+                ),
+                (lambda value: isinstance(value, dict), lambda value: value),
+            ]
+            for predicate, transform in rules:
+                if predicate(item):
+                    return transform(item)
             raise TypeError(f"Cannot serialize object of type {type(item)}")
 
         # Already a Flask Response -> return as is
@@ -59,7 +63,11 @@ class ResponseSerializer:
         if isinstance(result, tuple):
             data = self.extract_data(result)
             status_code = self.extract_status_code(result)
-            return make_response(jsonify(serialize_item(data)), status_code)
+            headers = self.extract_headers(result)
+            response = make_response(jsonify(serialize_item(data)), status_code)
+            if headers:
+                response.headers.extend(headers)
+            return response
 
         # Ensures str/bytes are wrapped
         if isinstance(result, (str, bytes)):
@@ -67,21 +75,32 @@ class ResponseSerializer:
 
         return make_response(jsonify(serialize_item(result)), 200)
 
-    def extract_data(self, result: Any) -> Tuple[Any, ...]:
-        return result[0] if isinstance(result, tuple) else result
+    def extract_data(self, result: Any) -> Any:
+        if not isinstance(result, tuple):
+            return result
+        if len(result) == 0:
+            return None
+        return result[0]
 
     def extract_status_code(self, result: Any, default: int = 200) -> int:
-        if isinstance(result, tuple):
-            possible_status = result[1] if len(result) > 1 else default
-            if (
-                not isinstance(possible_status, int)
-                and hasattr(possible_status, "value")
-                and isinstance(getattr(possible_status, "value", None), int)
-            ):
-                return possible_status.value
-            elif isinstance(possible_status, int):
-                return possible_status
+        if not isinstance(result, tuple):
+            return default
+        if len(result) >= 2 and isinstance(result[1], int):
+            return result[1]
+        if len(result) >= 2 and hasattr(result[1], "value"):
+            value = getattr(result[1], "value", None)
+            if isinstance(value, int):
+                return value
         return default
+
+    def extract_headers(self, result: Any) -> dict[str, str] | None:
+        if not isinstance(result, tuple):
+            return None
+        if len(result) == 3 and isinstance(result[2], dict):
+            return result[2]
+        if len(result) == 2 and isinstance(result[1], dict):
+            return result[1]
+        return None
 
 
 # todo : add File request
@@ -99,20 +118,41 @@ async def bind_route_parameters(
             default = param.default
             base_type, dependency = resolve_annotation(annotation, default=default)
 
-            if isinstance(default, Depend):
-                dep_func = (dependency or default).dependency  # type: ignore
-                if not hasattr(g, "_nova_deps"):
-                    g._nova_deps = {}
-                if dep_func not in g._nova_deps:
-                    if inspect.iscoroutinefunction(dep_func):
-                        g._nova_deps[dep_func] = await dep_func()
-                    else:
-                        g._nova_deps[dep_func] = dep_func()
-                bound_values[name] = g._nova_deps[dep_func]
+            if isinstance(default, Depend) or isinstance(dependency, Depend):
+                # Dependency injection is handled through resolve_dependencies.
+                continue
+
+            if isinstance(dependency, FileMarker):
+                if request.content_type is None or not request.content_type.startswith(
+                    "multipart/form-data"
+                ):
+                    raise HTTPException(
+                        status_code=status.UNSUPPORTED_MEDIA_TYPE,
+                        detail="The endpoint expects multipart form-data for file upload.",
+                    )
+
+                if dependency.multiple:
+                    files = request.files.getlist(name)
+                    if not files:
+                        raise HTTPException(
+                            status_code=status.UNPROCESSABLE_ENTITY,
+                            detail=f"No files provided for '{name}'.",
+                            title="File Upload Required",
+                        )
+                    bound_values[name] = files
+                else:
+                    file_obj = request.files.get(name)
+                    if file_obj is None:
+                        raise HTTPException(
+                            status_code=status.UNPROCESSABLE_ENTITY,
+                            detail=f"No file provided for '{name}'.",
+                            title="File Upload Required",
+                        )
+                    bound_values[name] = file_obj
                 continue
 
             if isinstance(dependency, FormMarker):
-                if not request.content_type is None or not any(
+                if request.content_type is None or not any(
                     request.content_type.startswith(t)
                     for t in [
                         "multipart/form-data",
@@ -259,13 +299,6 @@ async def bind_route_parameters(
 
     except HTTPException:
         raise
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            title="Route Binding Error",
-            detail=str(e),
-        ) from e
 
 
 def _response_model(

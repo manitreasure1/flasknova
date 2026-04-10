@@ -10,6 +10,10 @@
 
 
 # FlaskNova
+<div style="display: flex;">
+  <img src="./imgs/inside-nova.png" alt="Inside nova" width= 50%>
+  <img src="./imgs/nova-router.png" alt="Nova Router" width= 50%>
+</div>
 
 **A modern and lightweight extension for Flask that brings FastAPI-style features like automatic OpenAPI schema, Swagger UI, request validation, typed routing, and structured responses.**
 
@@ -53,6 +57,14 @@ FlaskNova brings modern API development to Flask with a **FastAPI-inspired desig
 ```bash
 pip install flask-nova
 ```
+
+### Optional SPA support
+
+```bash
+pip install flask-nova[spa]
+```
+
+This enables SPA support through the `spa` package, including `render_spa_template`, `get_esbuild_binary`, and optional `EsbuildWrapper` configuration.
 
 ---
 

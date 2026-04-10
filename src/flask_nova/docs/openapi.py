@@ -7,18 +7,29 @@ import inspect
 import re
 from ..di import Depend
 from ..types import FLASK_TO_OPENAPI_TYPES
-from ..multi_part import FormMarker
+from ..multi_part import FileMarker, FormMarker
 
 
 def map_type_to_openapi(py_type: Any) -> Dict[str, Any]:
+    from typing import get_origin, get_args
+    origin = get_origin(py_type)
+    args = get_args(py_type)
+    if origin is list:
+        return {"type": "array", "items": map_type_to_openapi(args[0]) if args else {"type": "string"}}
+    if origin is dict:
+        return {"type": "object", "additionalProperties": map_type_to_openapi(args[1]) if len(args) > 1 else {"type": "string"}}
     if py_type in (int,):
         return {"type": "integer"}
     if py_type in (float,):
         return {"type": "number"}
     if py_type in (bool,):
         return {"type": "boolean"}
+    if py_type in (str,):
+        return {"type": "string"}
     if getattr(py_type, "__name__", "").lower() == "uuid":
         return {"type": "string", "format": "uuid"}
+    if hasattr(py_type, "__name__"):
+        return {"type": "string"}  # Fallback
     return {"type": "string"}
 
 
@@ -68,6 +79,9 @@ def generate_openapi(
             continue
 
         view_func = app.view_functions[rule.endpoint]
+        if not hasattr(view_func, "_flasknova_tags"):
+            continue
+
         tags = getattr(view_func, "_flasknova_tags", [])
         response_model = getattr(view_func, "_flasknova_response_model", None)
         summary = getattr(view_func, "_flasknova_summary", None)
@@ -117,6 +131,26 @@ def generate_openapi(
                 {"name": param_name, "in": "path", "required": True, "schema": schema}
             )
 
+        query_params: list[dict[str, Any]] = []
+        path_param_names = {p["name"] for p in path_params}
+
+        for name, param in sig.parameters.items():
+            if name in path_param_names:
+                continue
+            annotation = type_hints.get(name, param.annotation)
+            default = param.default
+            if isinstance(default, (FormMarker, FileMarker)) or isinstance(default, Depend):
+                continue  # Skip body params
+            if annotation == inspect.Parameter.empty:
+                continue
+            schema = map_type_to_openapi(annotation)
+            query_params.append({
+                "name": name,
+                "in": "query",
+                "required": default == inspect.Parameter.empty,
+                "schema": schema
+            })
+
         for method in methods:
             if openapi_path not in paths:
                 paths[openapi_path] = {}
@@ -125,7 +159,7 @@ def generate_openapi(
                 "tags": tags,
                 "summary": summary or doc_summary,
                 "description": description or doc_description,
-                "parameters": path_params.copy(),
+                "parameters": path_params + query_params,
                 "responses": responses,
                 "servers": route_servers,
             }
@@ -160,7 +194,12 @@ def generate_openapi(
                     )
                     form_props = {}
 
-                    if (
+                    if isinstance(default, FileMarker):
+                        schema = {"type": "string", "format": "binary"}
+                        if default.multiple:
+                            schema = {"type": "array", "items": schema}
+                        form_props[name] = schema
+                    elif (
                         model_cls
                         and inspect.isclass(model_cls)
                         and is_pydantic_model(model_cls)
@@ -180,7 +219,6 @@ def generate_openapi(
                             or {}
                         )
                         for fn, finfo in fields.items():
-
                             f_ann = (
                                 getattr(finfo, "annotation", None)
                                 or getattr(finfo, "type", None)

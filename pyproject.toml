@@ -24,7 +24,8 @@ httpx = "^0.28.1"
 
 [tool.poetry]
 packages = [
-    { include = "flask_nova", from = "src" }
+    { include = "flask_nova", from = "src" },
+    { include = "spa", from = "src" }
     ]
 
 [build-system]

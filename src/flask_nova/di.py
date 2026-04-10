@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import g
-from typing import Any, Dict, TypeVar, Generic, Callable, Awaitable, ParamSpec
+from typing import Any, Dict, TypeVar, Generic, Callable, Awaitable, ParamSpec, Annotated, get_origin, get_args
 import inspect
 
 
@@ -23,11 +23,20 @@ def resolve_dependencies(
     view_func: Callable[P, R | Awaitable[R]],
 ) -> Callable[P, Awaitable[R]]:
     sig = inspect.signature(view_func)
-    dep_map = {
-        name: param.default
-        for name, param in sig.parameters.items()
-        if isinstance(param.default, Depend)
-    }
+    dep_map: Dict[str, Depend] = {}
+    for name, param in sig.parameters.items():
+        annotation = param.annotation
+        default = param.default
+        if isinstance(default, Depend):
+            dep_map[name] = default
+            continue
+
+        origin = get_origin(annotation)
+        if origin is Annotated:
+            for extra in get_args(annotation)[1:]:
+                if isinstance(extra, Depend):
+                    dep_map[name] = extra
+                    break
 
     async def get_value(dep_obj: Depend) -> Any:
         dep_func = dep_obj.dependency

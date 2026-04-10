@@ -4,12 +4,28 @@ This package is intended to be installed as an optional extra:
 
     pip install flask-nova[spa]
 
-Then in `flask_nova` you can access SPA helpers as `flask_nova.spa`.
+Then import SPA helpers directly from this package.
 """
 
-from ._nova_egine import EsbuildWrapper, get_esbuild_binary, render_spa_template
+from ._nova_engine import (
+    EsbuildWrapper,
+    get_esbuild_binary,
+    render_spa_template,
+    watch_spa,
+    SpaHotReloader,
+    SpaHotReloadExtension,
+    NovaEngine
+)
 
-__all__ = ["EsbuildWrapper", "get_esbuild_binary", "render_spa_template"]
+__all__ = [
+    "EsbuildWrapper",
+    "get_esbuild_binary",
+    "render_spa_template",
+    "watch_spa",
+    "SpaHotReloader",
+    "SpaHotReloadExtension",
+    "NovaEngine"
+]
 
 
 def ensure_esbuild_binary(version="0.27.4", target_dir="./bin"):
