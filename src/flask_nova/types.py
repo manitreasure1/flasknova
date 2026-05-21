@@ -8,8 +8,6 @@ from typing import (
     Dict,
     Literal,
     Mapping,
-    Optional,
-    Protocol,
     TypeVar,
     Union,
     Tuple
@@ -17,17 +15,9 @@ from typing import (
 
 T_route = TypeVar("T_route", bound=Callable[..., Any])
 
-# HTTP method literal for route decorators
+
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
 
-class NovaResponse(Protocol):
-    """HTTP response contract for Nova handlers."""
-    status_code: int
-    headers: Mapping[str, str]
-    body: Any
-    content_type: Optional[str]
-    reason_phrase: Optional[str]
-    cookies: Optional[Mapping[str, str]]
 
 # Generic return type used in handler signatures
 RouteReturn = Union[
@@ -37,7 +27,6 @@ RouteReturn = Union[
     int,
     float,
     list[Any],
-    NovaResponse,
     Response,
     Tuple[Any, int],
     Tuple[Any, int, Mapping[str, str]],

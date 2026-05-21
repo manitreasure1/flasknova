@@ -105,9 +105,7 @@ class ResponseSerializer:
 
 # todo : add File request
 async def bind_route_parameters(
-    func: Callable[..., Any],
     sig: inspect.Signature,
-    type_hints: Any
 ) -> Dict[str, Any]:
     """Bind parameters for route handlers, handling dependencies and request body parsing."""
     try:

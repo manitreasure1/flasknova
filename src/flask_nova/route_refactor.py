@@ -9,7 +9,6 @@ from . import types as nt
 from .di import resolve_dependencies
 from .exceptions import HTTPException
 
-
 P = t.ParamSpec("P")
 R = t.TypeVar("R")
 
@@ -40,17 +39,17 @@ class RouteFactory:
 
             f = resolve_dependencies(func)
 
-            setattr(f, "_flasknova_tags", tags or [])
-            setattr(f, "_flasknova_response_model", response_model)
-            setattr(f, "_flasknova_summary", summary)
-            setattr(f, "_flasknova_description", description)
-            setattr(f, "_flasknova_responses", responses)
-            setattr(f, "_flasknova_route_servers", servers)
-            setattr(f, "_flasknova_mermaid", mermaid)
+            f._flasknova_tags = tags or [] # type: ignore
+            f._flasknova_response_model = response_model  # type: ignore
+            f._flasknova_summary = summary  # type: ignore
+            f._flasknova_description = description  # type: ignore
+            f._flasknova_responses = responses  # type: ignore
+            f._flasknova_route_servers =  servers  # type: ignore
+            f._flasknova_mermaid =  mermaid  # type: ignore
 
             @ft.wraps(f)
             async def handler(*args: t.Any, **kwargs: dict[str, t.Any]):
-                bound_values = await bind_route_parameters(f, sig, type_hints)
+                bound_values = await bind_route_parameters(sig)
                 if isinstance(bound_values, tuple):
                     return bound_values
 
