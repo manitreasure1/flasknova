@@ -134,3 +134,14 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+.pytest_cache
+.ruff_cache
+.vscode
+
+# -----------
+benchmark
+docs
+spa
+updates.md
+flask_nova_012

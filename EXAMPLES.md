@@ -4,159 +4,141 @@ This file shows practical examples of how to use FlaskNova in real-world scenari
 
 ---
 
-## 🚀 Basic Example
+## Basic Example
 
 ```python
 from flasknova import FlaskNova, NovaBlueprint, status
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
-@api.route("/ping")
+@app.route("/ping")
 def ping():
     return {"message": "pong"}, status.OK
-
-app.register_blueprint(api)
 
 if __name__ == "__main__":
     app.run(debug=True)
 ```
-
-Visit `http://localhost:5000/docs` for Swagger UI or `http://localhost:5000/redoc` for Redoc UI.
+Visit [http://localhost:5000/docs](http://localhost:5000/docs)` for Swagger UI or [http://localhost:5000/redoc](http://localhost:5000/redoc) for Redoc UI.
 
 ---
 
-## 📦 Pydantic Model Example
+## Pydantic Model Example
 
 ```python
 from flasknova import FlaskNova, NovaBlueprint, status
 from pydantic import BaseModel
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
 class User(BaseModel):
     username: str
     email: str
 
-@api.route("/users", methods=["POST"], response_model=User)
+@app.route("/users", methods=["POST"], response_model=User)
 def create_user(data: User):
     return data, status.CREATED
-
-app.register_blueprint(api)
 ```
 
 ---
 
-## 🧑‍💻 Dataclass Example
+## Dataclass Example
 
 ```python
 import dataclasses
 from flasknova import FlaskNova, NovaBlueprint, status
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
 @dataclasses.dataclass
 class DCUser:
     id: int
     name: str
 
-@api.route("/dcuser", methods=["POST"], response_model=DCUser)
+@app.post("/dcuser", response_model=DCUser)
 def create_dcuser(data: DCUser):
     return data, status.CREATED
-
-app.register_blueprint(api)
 ```
-
 ---
 
-## 🛠️ Custom Class Example
+## Custom Class Example
 
 ```python
 from flasknova import FlaskNova, NovaBlueprint, status, HTTPException
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
 class CustomUser:
     id: int
     name: str
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name}
+    def to_dict():... # attr to identify custom class
 
-users = {}
-
-@api.route("/customuser", methods=["POST"], response_model=CustomUser)
+@app.route("/customuser", methods=["POST"], response_model=CustomUser)
 def create_customuser(data: CustomUser):
-    users[data.id] = data
     return data, status.CREATED
 
-@api.route("/customuser/<int:user_id>", methods=["GET"])
+@app.route("/customuser/<int:user_id>", methods=["GET"])
 def get_customuser(user_id: int):
     user = users.get(user_id)
     if not user:
         raise HTTPException(status_code=status.NOT_FOUND, detail="User not found")
     return user
-
-app.register_blueprint(api)
 ```
 
 ---
 
-## 📝 Using Form Data
+## Using Form Data
 
 ```python
 from flasknova import FlaskNova, NovaBlueprint, status, Form
 from pydantic import BaseModel
+from typing import Annotated
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
-class TryForm(BaseModel):
+class UserForm(BaseModel):
     id: int
     name: str
 
-@api.route("/form", methods=["POST"])
-def try_form(try_data: TryForm = Form(TryForm)):
-    return {"id": try_data.id, "name": try_data.name}, status.CREATED
+@app.route("/default/form", methods=["POST"])
+def default_form(user_data: UserForm = Form()):
+    return {"id": user_data.id, "name": user_data.name}, status.CREATED
 
-app.register_blueprint(api)
+@app.post("/annotated/form")
+def annotated_form(user_data: Annotated[UserForm, Form()])
+    return user_data.id
+
 ```
-
 ---
 
-## 🔐 Using `guard` Decorator
+## Using `guard` Decorator
 
 ```python
 from flasknova import FlaskNova, NovaBlueprint, guard, status
 from flask_jwt_extended import jwt_required
 
 app = FlaskNova(__name__)
-api = NovaBlueprint("api", __name__)
 
-@api.route("/secure", methods=["GET"])
+
+@app.route("/secure", methods=["GET"])
 @guard(jwt_required)
 def secure_endpoint():
     return {"msg": "This is a protected endpoint"}, status.OK
-
-app.register_blueprint(api)
 ```
 
 ---
 
-## ✅ Typed URL Parameters
+## Typed URL Parameters
 
 ```python
 @api.route("/items/<int:item_id>", methods=["GET"])
 def get_item(item_id: int):
-    return {"id": item_id, "name": "Item"}, status.OK
+    return {"id": item_id}, status.OK
 ```
 
 ---
 
-## 📚 Error Handling Example
+## Error Handling Example
 
 ```python
 from flasknova import HTTPException, status
@@ -169,5 +151,3 @@ def fail():
         title="Bad Request"
     )
 ```
-
-
