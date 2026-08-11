@@ -1,43 +1,38 @@
-from typing import Any, Optional, List, Any
 import http
 
 
 class HTTPException(Exception):
+    """Application exception rendered as an RFC 7807 problem response.
+
+    Args:
+        status_code: HTTP status code returned to the client.
+        detail: Human-readable explanation of the specific error.
+        title: Short, human-readable summary. Defaults to the HTTP status phrase.
+        type_: URI identifying the problem type.
+        instance: URI identifying the specific occurrence of the problem.
+        extensions: Additional problem fields included in the JSON response.
+    """
+
     def __init__(
         self,
         status_code: int,
-        detail: Optional[str|List[Any]]= None,
-        title: Optional[str] = None,
-        type_: Optional[str] = None,
-        instance: Optional[str] = None
-    ):
+        detail: None | str | list = None,
+        title: str | None = None,
+        type_: None | str = None,
+        instance: str | None = None,
+        **extensions: dict | None,
+    ) -> None:
+        _status = http.HTTPStatus(status_code)
 
-        http_status = http.HTTPStatus(status_code)
         self.status_code = status_code
-        self.detail = detail or http_status.phrase
-        self.title = title or http_status.phrase
-        self.type = type_ or f"https://httpstatuses.com/{status_code}"
-        self.instance = instance
+        self.detail = detail
+        self.title: str = title or _status.phrase
+        self.type: str = type_ or f"https://httpstatuses.com/{status_code}"
+        self.instance: str | None = instance
+        self.extensions = extensions
 
     def __str__(self) -> str:
-           return f"{self.status_code}: {self.detail}"
+        return f"{self.status_code}: {self.detail}"
 
     def __repr__(self) -> str:
-        class_name = self.__class__.__name__
-        return f"{class_name}(status_code={self.status_code!r}, detail={self.detail!r})"
-
-
-
-class ResponseValidationError(HTTPException):
-    def __init__(self, detail: Optional[str|List]= None, original_exception=None, instance: Optional[str] = None):
-        super().__init__(
-            status_code=500,
-            detail=detail,
-            instance=instance,
-            title="Response Validation Error",
-            type_="https://httpstatuses.com/500",
-        )
-        self.original_exception = original_exception
-
-
-
+        return f"{self.__class__.__name__}(status_code={self.status_code})"

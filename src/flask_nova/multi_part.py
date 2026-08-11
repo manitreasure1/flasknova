@@ -1,26 +1,30 @@
-from typing import Any, Callable, TypeVar, ParamSpec
-from flask.wrappers import Response
+from __future__ import annotations
+
+import typing as t
+from .typed import (
+    Guard,
+    Decorated,
+    FileMarker,
+    FormMarker,
+    FuncType,
+)
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
-
-GuardDecorator = Callable[[Callable[P, R]], Callable[P, R | Response]]
-
-class FormMarker:
-    def __init__(self, type_: type | None = None):
-        self.type_ = type_
-
-
-def Form(type_: type | None = None) -> Any:
-    return FormMarker(type_)
-
-
-def guard(*guards: GuardDecorator) -> Callable[[Callable[P, R]], Callable[P, R | Response]]:
-    def decorator(f: Callable[P, R]) ->  Callable[P, R | Response]:
-        decorated: Callable[P, R | Response] = f
+def guard(
+    *guards: Guard,
+) -> Guard:
+    def decorator(f: FuncType) -> Decorated:
+        decorated: Decorated = f
         for g in reversed(guards):
             decorated = g(decorated)
         return decorated
 
     return decorator
+
+
+def Form(type_: type | None = None) -> t.Any:
+    return FormMarker(type_)
+
+
+def File(name: str, multiple: bool = False) -> t.Any:
+    return FileMarker(name, multiple)
