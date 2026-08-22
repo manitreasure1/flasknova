@@ -9,54 +9,46 @@
 </p>
 
 
+FlaskNova — lightweight Flask extension for automatic OpenAPI, docs,
+request validation, typed routing, and response serialization.
 
+**Overview**
+FlaskNova provides small, focused tools to make building typed HTTP APIs with
+Flask easier: automatic OpenAPI generation, lightweight documentation UIs,
+request/response binders, and helpers for errors and logging.
 
-# FlaskNova
+**Features (brief descriptions)**
+- **OpenAPI & docs**: Produces an OpenAPI document (`/openapi.json`) and
+  exposes lightweight UI routes (`/docs`, `/redoc`, `/scalar`) for quick
+  inspection and manual testing.
+- **Request parsing & validation**: Bind and validate inputs using Pydantic
+  models, dataclasses, or custom binder classes; includes `Form` and `File`
+  helpers for form data and uploads.
+- **Response serialization**: Describe responses with `response_model` and
+  return native types; the library serializes Pydantic/dataclass/custom
+  objects consistently before returning JSON.
+- **Typed routing & `NovaBlueprint`**: Method-specific decorators (`@app.get`,
+  `@app.post`, etc.) accept metadata and `response_model` to keep routes
+  explicit and documented.
+- **Dependency injection**: `Depend` allows small provider callables to supply
+  route arguments (useful for auth, services, or computed values).
+- **Error handling & status helpers**: RFC 7807 problem-detail responses and a
+  `status` helper module for common HTTP status codes and consistency.
+- **CLI utilities**: Minimal CLI commands to generate request examples and
+  inspect route metadata for development convenience.
+- **Logging**: Optional structured JSON logger when `ANSI_COLOR_JSON_LOG` is
+  enabled in the app config.
 
-**A modern and lightweight extension for Flask that add automatic OpenAPI schema, Swagger UI, request validation, typed routing, and structured responses.**
-
----
-
-## Features
-
-* Automatic OpenAPI schema generation
-Redoc `/redoc`, Swagger ui `/docs`, Scalar `/scalar`.
-* Request validation using `Pydantic`, `Dataclass`, `Custom class` binders
-* Response model serialization (Pydantic, dataclass, or custom class)
-* Docstring-based or keyword-based `summary` and `description` for endpoints
-* Customizable Swagger UI and Redoc route path and OpenAPI metadata
-* Swagger support for `MERMAID`, `FETCHREQUEST`,
-* Clean modular routing with `NovaBlueprint`
-* Built-in HTTP status codes (`flasknova.status`)
-* RFC 7807 Problem Details Exception Handler
-* **`Form()` parsing for form data**
-* **`File()` parsing for file upload**
-* **`@guard()` decorator for combining multiple decorators (e.g. JWT + roles)**
-* **Cli** command for generating `.http` and `.py` routes endpoints and validation data types, and full route information
-
----
-
-## Why FlaskNova?
-
-FlaskNova brings modern API development to Flask:
-* **Automatic Redoc/OpenAPI/Scaler/Swagger UI**: Instantly document and test your API.
-* **Flexible serialization**: Use Pydantic, dataclasses, or custom classes (with type hints).
-* **Dependency injection**: Cleaner, more testable route logic.
-* **Unified error handling and status codes**: Consistent and robust.
-* **logging**: Built-in, unified logger.
----
-
-## Installation
+Installation
 
 ```bash
 pip install flask-nova
 ```
----
 
-## Quick Example
+Minimal example
 
 ```python
-from flasknova import FlaskNova, NovaBlueprint, status
+from flask_nova import FlaskNova, status
 from pydantic import BaseModel
 
 app = FlaskNova(__name__)
@@ -65,18 +57,19 @@ class User(BaseModel):
     username: str
     email: str
 
-@app.route("/users", methods=["POST"], response_model=User, summary="Create a new user")
+@app.post("/users", response_model=User)
 def create_user(data: User):
     return data, status.CREATED
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
 ```
 
-Visit [http://localhost:5000/docs](http://localhost:5000/docs) to see your API documentation!.
+Examples
+- See usage examples and bindings in the repository: [examples/nova2.py](examples/nova2.py#L1).
 
+Documentation
+- Full docs and examples: https://manitreasure1.github.io/flasknova
 
-## Documentation
-For full usage guides, including Blueprints, Dependency Injection, and CLI tools, please see the [Full Documentation](manitreasure1.github.io/flasknova).
-
-MIT License | Built by [manitreasure1](https://github.com/manitreasure1)
+License
+- MIT

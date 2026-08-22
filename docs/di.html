@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>FlaskNova Dependency Injection</title>
+        <meta name="description" content="FlaskNova dependency injection patterns and request-scoped lifetimes." />
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    </head>
+    <body>
+        <main style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+            <h1>Dependency Injection</h1>
+            <p>
+                FlaskNova provides a lightweight dependency mechanism for resolving simple
+                values and services directly into route functions. Use <code>Depend</code>
+                to keep application logic separate from request handling.
+            </p>
+
+            <h2>Why use Depend?</h2>
+            <ul>
+                <li>Keep route handlers concise and focused.</li>
+                <li>Inject authentication or authorization values cleanly.</li>
+                <li>Provide request-scoped utilities like loggers or caches.</li>
+                <li>Reuse shared service constructors without manual wiring.</li>
+            </ul>
+
+            <h2>Basic example</h2>
+            <pre><code class="language-python">from flask_nova import Depend
+
+
+def current_user(token: str = "secret"):
+    return {"user": "alice", "roles": ["admin"]}
+
+
+@app.get("/me")
+def get_me(user=Depend(current_user)):
+    return user
+</code></pre>
+
+            <h2>Request-scoped context</h2>
+            <p>
+                Every request gets a trace id stored on <code>g.trace_id</code>. This is
+                useful for dependencies that need request-specific state or logging.
+            </p>
+            <pre><code class="language-python">from flask import g
+from flask_nova import Depend
+
+
+def request_logger():
+    return lambda message: print(f"[{g.trace_id}] {message}")
+
+
+@app.get("/status")
+def status(route_logger=Depend(request_logger)):
+    route_logger("status requested")
+    return {"trace_id": g.trace_id}
+</code></pre>
+
+            <h2>Lifetime patterns</h2>
+            <h3>Singleton</h3>
+            <p>
+                A single shared instance for the app lifetime. Useful for global services
+                and caches.
+            </p>
+            <pre><code class="language-python">cache = CacheClient()
+
+
+def get_cache():
+    return cache
+</code></pre>
+<div class="note">app.config is an example</div>
+
+            <h3>Scoped</h3>
+            <p>
+                Per-request dependencies are resolved for each request. FlaskNova makes it
+                easy to access request-scoped values via <code>Depend</code>.
+            </p>
+            <pre><code class="language-python">from flask import Depend
+def user_current_user_id():
+    return 123
+
+@app.get("/user")
+def user(user = Depend(user_current_user_id)):...
+
+</code></pre>
+
+            <h3>Transient</h3>
+            <p>
+                Create a fresh object every time the dependency is resolved. Use this for
+                non-shared helpers or lightweight factories.
+            </p>
+            <pre><code class="language-python">def new_service():
+    return Service()
+</code></pre>
+
+            <h2>Best practices</h2>
+            <p>
+                Keep dependencies small and explicit. Use them for computed values,
+                service resolution, and authorization checks, while keeping endpoint logic
+                focused on request handling.
+            </p>
+        </main>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    </body>
+</html>
