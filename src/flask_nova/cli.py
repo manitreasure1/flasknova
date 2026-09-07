@@ -115,7 +115,7 @@ def _generate(
                         "body": body,
                         "url": url.replace("//", "/"),
                         "content_type": content_type,
-                        "endpoint": f"{method.lower()}_{re.sub(r"[/{} -]", '_', url.strip('/'))}",
+                        "endpoint": f"{method.lower()}_{re.sub(r'[/{} -]', '_', url.strip('/'))}",
                     }
                 )
     return requests
@@ -138,7 +138,7 @@ def _generate_http_file(
         lines.append(f"{request['method']} {url}")
 
         if request["content_type"]:
-            lines.append(f"Content-Type: {request["content_type"]}\n")
+            lines.append(f"Content-Type: {request['content_type']}\n")
 
         if type(request["body"]) is str:
             lines.append(request["body"])

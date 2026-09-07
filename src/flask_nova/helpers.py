@@ -214,7 +214,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/json": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -226,7 +226,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/json": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -236,7 +236,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/json": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -249,7 +249,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/x-www-form-urlencoded": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -261,7 +261,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/x-www-form-urlencoded": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -271,7 +271,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                         request_body["content"] = {
                             "application/x-www-form-urlencoded": {
                                 "schema": {
-                                    "$ref": f"#/components/schemas/{obj["object"].__name__}"
+                                    "$ref": f"#/components/schemas/{obj['object'].__name__}"
                                 }
                             }
                         }
@@ -328,7 +328,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                 if res["type"] in ("customclass", "dataclass", "basemodel"):
                     res__[status_code]["application/json"] = {
                         "schema": {
-                            "$ref": f"#/components/schemas/{res["object"].__name__}"
+                            "$ref": f"#/components/schemas/{res['object'].__name__}"
                         }
                     }
                 if responses and not responses.get(status_code):
