@@ -140,8 +140,5 @@ cython_debug/
 .vscode
 
 # -----------
-benchmark
-docs
-spa
 updates.md
 flask_nova_012
