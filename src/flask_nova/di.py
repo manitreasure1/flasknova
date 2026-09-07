@@ -6,8 +6,11 @@ T = t.TypeVar("T")
 
 
 class Depend(t.Generic[T]):
-    def __init__(self, dependency: t.Callable[..., T]) -> None:
+    def __init__(self, dependency: t.Callable[..., T | t.Awaitable[T]])  -> None:
         self.dependency = dependency
 
     def __getitem__(self, key) -> None:
+        pass
+
+    def __await__(self):
         pass
