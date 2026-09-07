@@ -1,0 +1,129 @@
+@base_url = http://127.0.0.1:5000
+
+
+###
+GET {{base_url}}/address
+null
+
+###
+GET {{base_url}}/author/books/?year=3325&month=str-obj
+Content-Type: application/json
+
+{
+    "name": "string",
+    "age": 4751
+}
+
+###
+GET {{base_url}}/student
+null
+
+###
+GET {{base_url}}/api/query-req?id=1248&name=str-obj&age=8345
+null
+
+###
+GET {{base_url}}/api/query-user?id=7558&name=value&age=2833
+null
+
+###
+POST {{base_url}}/
+Content-Type: application/json
+
+{
+    "name": "str-obj",
+    "age": "value"
+}
+
+###
+POST {{base_url}}/upload-profile
+Content-Type: multipart/form-data
+
+--WebkitFormBoundary
+ Content-Disposition: form-data; name='profile' filename= ''
+ Content-type: multipart/form-data
+
+ < ./../.
+ --WebkitFormBoundary--
+
+###
+POST {{base_url}}/upload-profiles
+Content-Type: multipart/form-data
+
+--WebkitFormBoundary
+ Content-Disposition: form-data; name='profile' filename= ''
+ Content-type: multipart/form-data
+
+ < ./../.
+ --WebkitFormBoundary--
+
+###
+POST {{base_url}}/empyty-form
+null
+
+###
+POST {{base_url}}/form-body
+Content-Type: application/x-www-form-urlencoded
+
+age=4294&name=string
+
+###
+POST {{base_url}}/form-string
+null
+
+###
+POST {{base_url}}/annotation-file
+Content-Type: multipart/form-data
+
+--WebkitFormBoundary
+ Content-Disposition: form-data; name='user' filename= ''
+ Content-type: multipart/form-data
+
+ < ./../.
+ --WebkitFormBoundary--
+
+###
+POST {{base_url}}/secure
+null
+
+###
+POST {{base_url}}/secure-async
+null
+
+###
+POST {{base_url}}/student
+Content-Type: application/json
+
+{
+    "name": "value",
+    "gender": "value",
+    "age": "value"
+}
+
+###
+POST {{base_url}}/create-user
+Content-Type: application/json
+
+{
+    "name": "str-obj",
+    "age": "string"
+}
+
+###
+POST {{base_url}}/log
+null
+
+###
+POST {{base_url}}/auth/signup
+Content-Type: application/json
+
+{
+    "id": "df832b5d-44a6-462b-bea0-b14b89c1a7e0",
+    "username": "str-obj"
+}
+
+###
+PUT {{base_url}}/auth/login
+null
+
+###
