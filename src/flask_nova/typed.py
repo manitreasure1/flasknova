@@ -13,9 +13,10 @@ class FormMarker:
 
 
 class FileMarker:
-    def __init__(self, name: str, multiple: bool = False) -> None:
+    def __init__(self, name: str, multiple: bool = False, description: str| None = None) -> None:
         self.name = name
         self.multiple = multiple
+        self.description = description
 
 
 Method = t.Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
