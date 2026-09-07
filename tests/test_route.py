@@ -1,24 +1,27 @@
 import unittest
-from typing import cast, Annotated
 from flask import request
 from flask_nova import FlaskNova, NovaBlueprint, status, Depend, HTTPException, Form
 import asyncio
 from pydantic import BaseModel
 import json
-bp = NovaBlueprint("test", __name__)
 
+
+bp = NovaBlueprint("test", __name__)
 
 
 # === Dependencies ===
 def get_user():
     return {"name": "Treasure"}
 
+
 def get_json_data():
     return request.get_json(force=True)
+
 
 async def get_async_user():
     await asyncio.sleep(0.01)
     return {"name": "AsyncTreasure"}
+
 
 class UserForm(BaseModel):
     name: str
@@ -26,31 +29,54 @@ class UserForm(BaseModel):
     is_active: bool = True
 
 
-
-
-@bp.route("/register-user", methods=["POST"], summary="Register User with Form", description="Accepts form data for user registration.")
-def register_user(user_data: UserForm =  Form(UserForm)):
+@bp.route(
+    "/register-user",
+    methods=["POST"],
+    summary="Register User with Form",
+    description="Accepts form data for user registration.",
+)
+def register_user(user_data: UserForm = Form(UserForm)):
     return user_data.model_dump(), status.CREATED
 
 
-
 # === Routes ===
-@bp.route("/hello", methods=["GET"], tags=["Greeting"], summary="Say Hello", description="Returns a hello message", response_model=dict)
-def hello(user=cast(dict, Depend(get_user))):
+@bp.route(
+    "/hello",
+    methods=["GET"],
+    tags=["Greeting"],
+    summary="Say Hello",
+    description="Returns a hello message",
+    response_model=dict,
+)
+def hello(user= Depend(get_user)):
     return {"message": f"Hello {user['name']}"}, status.OK
 
-@bp.route("/error", methods=["GET"], summary="Trigger Error", description="Raises an error intentionally")
+
+@bp.route(
+    "/error",
+    methods=["GET"],
+    summary="Trigger Error",
+    description="Raises an error intentionally",
+)
 def error_route():
     raise HTTPException(detail="Something went wrong", status_code=status.BAD_REQUEST)
 
-@bp.route("/echo", methods=["POST"], summary="Echo JSON", description="Echoes posted JSON data", response_model=dict)
-def echo(data=cast(dict, Depend(get_json_data))):
+
+@bp.route(
+    "/echo",
+    methods=["POST"],
+    summary="Echo JSON",
+    description="Echoes posted JSON data",
+    response_model=dict,
+)
+def echo(data=Depend(get_json_data)):
     return {"echo": data}, status.OK
 
 
 @bp.route("/async-hello", methods=["GET"], summary="Async Hello", response_model=dict)
-def async_hello(user=cast(dict, Depend(get_async_user))):
+def async_hello(user= Depend(get_async_user)):
     return {"message": f"Hello {user['name']}"}, status.OK
+
 
 # === Tests ===
 class FlaskNovaTestCase(unittest.TestCase):
@@ -80,11 +106,13 @@ class FlaskNovaTestCase(unittest.TestCase):
 
     def test_echo_missing_json(self):
         response = self.client.post("/echo")
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 400)
 
     def test_echo_invalid_json(self):
-        response = self.client.post("/echo", data="not json", content_type="application/json")
-        self.assertEqual(response.status_code, 500)
+        response = self.client.post(
+            "/echo", data="not json", content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_openapi_schema(self):
         response = self.client.get("/openapi.json")
@@ -92,8 +120,6 @@ class FlaskNovaTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertIn("paths", data)
         self.assertIn("/hello", data["paths"])
-
-
 
     def test_swagger_ui_available(self):
         response = self.client.get("/docs")
@@ -105,7 +131,7 @@ class FlaskNovaTestCase(unittest.TestCase):
         route_func = bp.view_functions.get("hello", "test.hello")
 
         if hasattr(route_func, "__wrapped__"):
-            original_depend = route_func.__wrapped__.__defaults__[0]
+            original_depend = route_func.__wrapped__.__defaults__[0]  # type: ignore
             self.assertIsInstance(original_depend, Depend)
 
             # Patch dependency
@@ -123,21 +149,20 @@ class FlaskNovaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("AsyncTreasure", response.get_json()["message"])
 
-
     def test_successful_form_submission_multipart(self):
         """Test a valid multipart/form-data submission."""
-        data = {
-            'name': 'Alice',
-            'age': '30',
-            'is_active': 'true'
-        }
-        response = self.client.post("/register-user", data=data, content_type="application/x-www-form-urlencoded")
+        data = {"name": "Alice", "age": "30", "is_active": "true"}
+        response = self.client.post(
+            "/register-user",
+            data=data,
+            content_type="application/x-www-form-urlencoded",
+        )
 
         self.assertEqual(response.status_code, status.CREATED)
         response_data = json.loads(response.data)
-        self.assertEqual(response_data['name'], "Alice")
-        self.assertEqual(response_data['age'], 30)
-        self.assertEqual(response_data['is_active'], True)
+        self.assertEqual(response_data["name"], "Alice")
+        self.assertEqual(response_data["age"], 30)
+        self.assertEqual(response_data["is_active"], True)
 
 
 if __name__ == "__main__":
