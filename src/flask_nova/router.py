@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from flask import Blueprint as _BluePrint
+from .helpers import __builder___
+
+from flask.blueprints import Blueprint as _BluePrint
 import typing as t
 import warnings
+import copy
 import os
 
+
 if t.TYPE_CHECKING:
+    from flask.typing import RouteCallable
     from flask.sansio.scaffold import T_route
     from .typed import Method
     from enum import Enum
@@ -25,6 +30,10 @@ class NovaBlueprint(_BluePrint):
         root_path: str | None = None,
         cli_group: str | None = None,
     ) -> None:
+
+        self._compiled_validators: dict[str, t.Any] = {}
+        self.openapi: dict[str, t.Any] = {}
+
         super().__init__(
             name,
             import_name,
@@ -38,10 +47,29 @@ class NovaBlueprint(_BluePrint):
             cli_group,
         )
 
+    def add_url_rule(
+        self,
+        rule: str,
+        endpoint: str | None = None,
+        view_func: RouteCallable | None = None,
+        provide_automatic_options: bool | None = None,
+        **options: t.Any,
+    ) -> None:
+        x_rule = copy.copy(rule)
+        if self.url_prefix:
+            x_rule = self.url_prefix + rule
+
+        if view_func:
+            __builder___(self, x_rule, view_func, options, True)
+
+        return super().add_url_rule(
+            rule, endpoint, view_func, provide_automatic_options, **options
+        )
+
     def route(  # type: ignore
         self,
         rule: str,
-        methods: list[Method],
+        methods: list[Method] = ["GET"],
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
@@ -51,7 +79,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": methods[0],
             "tags": tags,
             "summary": summary,
@@ -75,7 +104,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": "GET",
             "tags": tags,
             "summary": summary,
@@ -100,7 +130,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route]:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": "POST",
             "tags": tags,
             "summary": summary,
@@ -124,7 +155,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": "PUT",
             "tags": tags,
             "summary": summary,
@@ -148,7 +180,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": "PATCH",
             "tags": tags,
             "summary": summary,
@@ -172,7 +205,8 @@ class NovaBlueprint(_BluePrint):
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
-        options[rule] = {
+
+        options["_route_meta"] = {
             "methods": "DELETE",
             "tags": tags,
             "summary": summary,

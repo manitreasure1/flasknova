@@ -1,35 +1,39 @@
 from __future__ import annotations
 
-from flask import Flask as _Flask, Request, Response, jsonify, request, g
-from flask.globals import request_ctx
+from flask.globals import request_ctx, g, request
+from flask.wrappers import Response, Request
 from flask.typing import HeadersValue
+from flask.app import Flask as _Flask
+from flask.json import jsonify
+
 from werkzeug.datastructures import Headers
 
-from .helpers import type_builder, TypeChecker, __openapi__
-from .exceptions import HTTPException
+from .helpers import __builder___, __builder_update__
 from .docs import create_docs_blueprint
+from .exceptions import HTTPException
 from .serializer import Serializer
 from .logger import json_logger
 from .binder import Binder
 from .typed import Method
 
 from enum import Enum
-from uuid import UUID
-import inspect as ip
 import typing as t
 import warnings
 import logging
 import secrets
 import os
-import re
 
 if t.TYPE_CHECKING:
-    from werkzeug.routing import Rule
     from flask.typing import RouteCallable, ResponseReturnValue
+    from flask.sansio.blueprints import Blueprint
     from flask.sansio.scaffold import T_route
+    from werkzeug.routing import Rule
 
 
 class FlaskNova(_Flask):
+    _binder = Binder
+    _serializer = Serializer
+
     def __init__(
         self,
         import_name: str = __name__,
@@ -73,13 +77,10 @@ class FlaskNova(_Flask):
         self.license = license
         self.terms_of_service = terms_of_service
         self.external_docs = external_docs
+        # ? add security
 
-        # ? add
-        # tags, externalDocs, servers, security
-
-        self._binder = Binder
-        self._serializer = Serializer
         self.__rule: str = ""  # let's call this SnoopShot
+        self.__method: str = ""
 
         @self.errorhandler(code_or_exception=HTTPException)
         def _http_exc(e: HTTPException) -> tuple[Response, int]:
@@ -96,7 +97,8 @@ class FlaskNova(_Flask):
                 trace_id = secrets.token_hex(nbytes=16)
             g.trace_id = trace_id
 
-        self.register_blueprint(create_docs_blueprint(self))
+        if self.config.get("FLASKNOVA_ENABLE_DOCS", True):
+            self.register_blueprint(create_docs_blueprint(self))
 
     def add_url_rule(
         self,
@@ -106,163 +108,21 @@ class FlaskNova(_Flask):
         provide_automatic_options: bool | None = None,
         **options: dict[str, t.Any],
     ) -> None:
-
         if view_func:
-            schema_cache: dict[str, dict[str, t.Any]] = self._build_schema_cache(
-                rule, view_func, options
-            )
-            self._compiled_validators[rule] = schema_cache
+            __builder___(self, rule, view_func, options)
 
-            operationId: str = view_func.__name__
-            route_meta: dict[str, t.Any] | None = options.pop(rule, None)
-
-            tags: list[str] | None = []
-            servers: list[dict[str, str]] | None = []
-            if route_meta:
-                tags = route_meta.get("tags")
-                servers = route_meta.get("servers")
-
-                for name, value in route_meta.items():
-                    if not value:
-                        route_meta.pop(name)
-                    route_meta = {**route_meta}
-                route_meta.pop("response_model", None)
-                open_api_meta: dict[str, t.Any | dict[str, t.Any]] = {
-                    **route_meta,
-                    **schema_cache,
-                }
-            else:
-                open_api_meta = schema_cache
-            open_api_meta["operationId"] = operationId
-
-            build: dict[str, t.Any] = {}
-            info: dict[str, str | dict[str, str]] = {}
-
-            if not rule.startswith(
-                ("/docs", "/openapi", "/redoc", "/static", "swagger")
-            ):
-                build[rule] = open_api_meta
-                route_spec = __openapi__(build)
-
-                # todo: MOVE IN SEPARATE FUNCTION------------------/
-                self.openapi["openapi"] = "3.2.0"
-                if self.external_docs:
-                    self.openapi["externalDocs"] = self.external_docs
-                if self.summary:
-                    info["summary"] = self.summary
-                if self.version:
-                    info["version"] = self.version
-                if self.description:
-                    info["description"] = self.description
-                if self.contact:
-                    info["contact"] = self.contact
-                if self.license:
-                    info["license"] = self.license
-                if self.terms_of_service:
-                    info["termsOfService"] = self.terms_of_service
-                self.openapi["info"] = info
-
-                if route_spec:
-                    self.openapi.setdefault("paths", {}).update(route_spec["paths"])
-                    self.openapi.setdefault("components", {}).update(
-                        route_spec["components"]
-                    )
-                if tags:
-                    self.openapi.setdefault("tags", []).extend(tags)
-                    self.openapi["tags"] = list(set(self.openapi["tags"]))
-                if servers:
-                    self.openapi.setdefault("servers", []).extend(servers)
-
+        if self.blueprints:
+            __builder_update__(self)
         return super().add_url_rule(
             rule, endpoint, view_func, provide_automatic_options, **options
         )
 
-    def _build_schema_cache(
-        self,
-        rule: str,
-        view_func: RouteCallable,
-        options: dict[str, t.Any],
-    ) -> dict[str, dict[str, t.Any]]:
-        build: dict[str, t.Any] = {}
-        signature: ip.Signature = ip.signature(view_func)
-        route_meta: dict | None = options.get(rule)
-        return_type = t.get_type_hints(obj=view_func).get("return")
-
-        build["request"] = self._request_signature(rule, signature)
-        build["response"] = self._response_signature(route_meta, return_type)
-        return build
-
-    def _response_signature(
-        self, route_meta: dict | None, return_type: t.Any
-    ) -> dict[str, str | t.Any | None] | dict[str, str | t.Any] | None:
-        response = None
-        status = None
-        headers = None
-        # todo - add status and headers to route metadata
-        if route_meta and route_meta.get("response_model"):
-            response = route_meta.get("response_model")
-
-        elif return_type:
-            r_args: tuple[t.Any, ...] = t.get_args(tp=return_type)
-            if t.get_origin(return_type) is tuple and r_args[0] not in (
-                int,
-                float,
-                dict,
-                str,
-                Response,
-            ):
-
-                len_rt: int = len(r_args)
-                if len_rt == 3:
-                    response, status, headers = r_args
-                elif len_rt == 2:
-                    if not isinstance(r_args[1], (dict, tuple, list)):
-                        response, status = r_args
-                    else:
-                        response, headers = r_args
-            else:
-                response = return_type
-
-        typed_result = type_builder(TypeChecker(response))
-        if typed_result:
-            typed_result.update({"status": status, "headers": headers})
-        return typed_result
-
-    def _request_signature(
-        self, rule: str, signature: ip.Signature
-    ) -> dict[str, t.Any]:
-        build: dict[str, t.Any] = {}
-        paths: list[str] = []
-        get_paths: list[str] = re.findall(pattern=r"<([^>]+)>", string=rule)
-        for path in get_paths:
-            if ":" in path:
-                paths.append(path.split(sep=":")[1])
-            else:
-                paths.append(path)
-
-        for name, param in signature.parameters.items():
-            annotation = param.annotation
-            default = param.default
-            if t.get_origin(annotation) is t.Annotated:
-                type_, *default_ = t.get_args(annotation)  # type: ignore[assignment]
-            else:
-                type_ = annotation if annotation is not ip._empty else None
-                default_ = default if default is not ip._empty else None  # type: ignore[assignment]
-            default_ = default_[0] if isinstance(default_, list) else default_
-
-            if name and type_ in (str, int, float, UUID):
-                if name in paths:
-                    pq = {"type": "path", "object": type_}
-                else:
-                    pq = {"type": "query", "object": type_}
-                build[name] = pq
-            elif name and not type_ and not default_:
-                build[name] = {"type": "query", "object": str}
-            else:
-                build[name] = type_builder(
-                    type_checker=TypeChecker(annotation=type_, default=default_)
-                )
-        return build
+    def register_blueprint(self, blueprint: Blueprint, **options: t.Any) -> None:
+        if options.get("url_prefix"):
+            self.logger.warning(
+                "set `url_prefix` at the class level `NovaBlueprint(..., url_prefix=..,)` to avoid url mismatch!"
+            )
+        return super().register_blueprint(blueprint, **options)
 
     def dispatch_request(
         self,
@@ -271,6 +131,7 @@ class FlaskNova(_Flask):
         if req.routing_exception is not None:
             self.raise_routing_exception(request=req)
 
+        method = req.method
         rule: Rule = req.url_rule  # type: ignore
         if (
             getattr(rule, "provide_automatic_options", False)
@@ -279,12 +140,19 @@ class FlaskNova(_Flask):
             return self.make_default_options_response()
 
         view_args: dict[str, t.Any] | None = {}
-        binders = self._compiled_validators[rule.rule].get("request")
+
+        _method_graph: dict[str, dict[str, t.Any]] = self._compiled_validators[method]
+        binders = (
+            _method_graph[rule.rule].get("request")
+            if _method_graph.get(rule.rule)
+            else None
+        )
+
         if binders:
             for field_name, field_obj in binders.items():
                 result = self._binder(field_name, field_obj, req).make_request()
                 view_args[field_name] = result  # type: ignore[index]
-
+        self.__method = method
         self.__rule = req.url_rule.rule  # type: ignore
         return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[arg-type]
 
@@ -300,17 +168,27 @@ class FlaskNova(_Flask):
         ```
         _Note_: This does not override the `reponse_model` in the route decorator
 
-        **versionadded**: 0.1.3
+        **versionadded**: 0.2.0
         """
         status: int | None = None
         headers: HeadersValue | None = None
         response_ = None
 
-        serializer_obj = self._compiled_validators.get(self.__rule)
+        _method_graph: dict[str, dict[str, t.Any]] = self._compiled_validators.get(
+            self.__method, {}
+        )
+        serializer_obj = _method_graph.get(self.__rule)
 
-        if serializer_obj and rv:
-            response_obj = serializer_obj.get("response")
-            if isinstance(rv, type) and rv not in (int, float, str, Response):
+        self.__method = ""
+        if (
+            serializer_obj
+            and serializer_obj.get("response")
+            and serializer_obj["response"].get("type")
+            and serializer_obj["response"]["type"] != "any"
+            and rv
+        ):
+            response_obj = serializer_obj["response"]
+            if isinstance(rv, type) and not isinstance(rv, (int, float, str, Response)):
                 result = self._serializer(rv, response_obj).serialize()
                 return jsonify(result)
 
@@ -327,15 +205,17 @@ class FlaskNova(_Flask):
                         response_, status = rv  # type: ignore
                     else:
                         response_, headers = rv  # pyright: ignore[reportAssignmentType]
-
                 result = self._serializer(response_, response_obj).serialize()
-                r_o: Response = jsonify(result)
+                r_o = jsonify(result)
                 if status:
                     r_o.status = status
                 if headers:
                     r_o.headers.update(headers)
                 return r_o
-        return super().make_response(rv)  # type: ignore
+            elif isinstance(rv, dict):
+                result = self._serializer(rv, response_obj).serialize()
+                return jsonify(result)
+        return super().make_response(rv)
 
     @property
     def logger(self) -> logging.Logger:
@@ -374,7 +254,7 @@ class FlaskNova(_Flask):
     def route(  # type: ignore
         self,
         rule: str,
-        methods: list[Method],
+        methods: list[Method] = ["GET"],
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
@@ -400,7 +280,7 @@ class FlaskNova(_Flask):
         Returns:
             A decorator that registers the endpoint with Flask.
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": methods[0],
             "tags": tags,
             "summary": summary,
@@ -438,7 +318,7 @@ class FlaskNova(_Flask):
             )
         ```
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": "GET",
             "tags": tags,
             "summary": summary,
@@ -475,7 +355,7 @@ class FlaskNova(_Flask):
             )
         ```
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": "POST",
             "tags": tags,
             "summary": summary,
@@ -511,7 +391,7 @@ class FlaskNova(_Flask):
             )
         ```
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": "PUT",
             "tags": tags,
             "summary": summary,
@@ -547,7 +427,7 @@ class FlaskNova(_Flask):
             )
         ```
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": "PATCH",
             "tags": tags,
             "summary": summary,
@@ -583,7 +463,7 @@ class FlaskNova(_Flask):
             )
         ```
         """
-        options[rule] = {
+        options["_route_meta"] = {
             "methods": "DELETE",
             "tags": tags,
             "summary": summary,

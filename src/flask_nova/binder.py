@@ -24,27 +24,28 @@ class Binder:
 
     def make_request(
         self,
-    ):
+    ) -> type | str | list[FileStorage] | FileStorage | dict[str, str] | None:
+
         kind: str = self.field_obj["type"]
-        obj: type = self.field_obj["object"]
+        obj: type | None = self.field_obj.get("object")
         default: type | None = self.field_obj.get("default")
 
         try:
             match kind:
                 case "dataclass":
-                    return obj(**self._json_request())
+                    return obj(**self._json_request())  # type: ignore[misc]
                 case "customclass":
                     return self.__make_attr(self._json_request())
                 case "basemodel":
-                    return obj(self._json_request())
+                    return obj(**self._json_request())  # type: ignore[misc]
                 case "query":
                     return self._query_request()
                 case "path":
                     return self._path_request()
                 case "dataclassform":
-                    return obj(**self._form_request())
+                    return obj(**self._form_request())  # type: ignore[misc]
                 case "basemodelform":
-                    return obj.model_validate(self._form_request())
+                    return obj.model_validate(self._form_request())  # type: ignore[union-attr]
                 case "customclassform":
                     return self.__make_attr(self._form_request())
                 case "file":
@@ -52,7 +53,7 @@ class Binder:
                 case "form":
                     return self._form_request()
                 case "dependency":
-                    return self.resolve_dependencies(default)
+                    return self.resolve_dependencies(default)  # type: ignore[arg-type]
                 case _:
                     return None
         except TypeError as e:
@@ -72,7 +73,8 @@ class Binder:
         return self.request.args.get(self.field_name)
 
     def _path_request(self):
-        return self.request.view_args.get(self.field_name)
+        if self.request.view_args:
+            return self.request.view_args.get(self.field_name)
 
     def _json_request(self) -> dict[t.Any, t.Any]:
         # ! `force=True` handle content type validation
@@ -103,6 +105,7 @@ class Binder:
             ]
         ):
             raise HTTPException(
+                title="Unsupported Media Type",
                 status_code=status.UNSUPPORTED_MEDIA_TYPE,
                 detail="The endpoint expects form data, but the request has an incorrect content type.",
             )
@@ -118,10 +121,29 @@ class Binder:
     def _file_request(
         self,
     ) -> list[FileStorage] | FileStorage | None:
+        name: str = self.field_obj["default"].name or self.field_name
+        file_obj: list[FileStorage] | FileStorage | None = None
+
+        if not self.request.content_type or not any(
+            self.request.content_type.startswith(t)
+            for t in [
+                "multipart/form-data",
+                "application/octet-stream",
+            ]
+        ):
+            raise HTTPException(
+                status_code=status.UNSUPPORTED_MEDIA_TYPE,
+                detail="The endpoint expects binary file data, but the request has an incorrect content type.",
+            )
         if self.field_obj["default"].multiple:
-            file_obj = self.request.files.getlist(self.field_obj["default"].name)
+            file_obj = self.request.files.getlist(name)
         else:
-            file_obj = self.request.files.get(self.field_obj["default"].name)  # type: ignore[assignment]
+            file_obj = self.request.files.get(name)
+        if not file_obj:
+            raise HTTPException(
+                status_code=status.UNPROCESSABLE_ENTITY,
+                title="Empty File Submission",
+            )
         return file_obj
 
     def __make_attr(self, obj_dict: dict) -> type:
@@ -139,12 +161,17 @@ class Binder:
     def resolve_dependencies(self, dependency: Depend):
         dep_func = dependency.dependency
 
-        @wraps(dep_func)
-        def resolver():
-            if ip.iscoroutinefunction(dep_func):
-                raise AttributeError(
-                    f"Depend: cannot execute awaitable function `{dep_func.__name__}`"
-                )
-            return dep_func()
+        if ip.iscoroutinefunction(dep_func):
 
-        return resolver()
+            @wraps(dep_func)
+            async def resolve_async():
+                return await dep_func()
+
+            return resolve_async()
+        else:
+
+            @wraps(dep_func)
+            def resolve_sync():
+                return dep_func()
+
+            return resolve_sync()

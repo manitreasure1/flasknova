@@ -2,7 +2,7 @@ from werkzeug.datastructures import FileStorage, Headers
 from .exceptions import HTTPException
 from .logger import get_flasknova_logger
 from ._task import to_process, to_thread
-from .multi_part import File, Form
+from .multi_part import File, Form, guard
 from .router import NovaBlueprint
 from .core import FlaskNova
 from .status import status
@@ -21,4 +21,5 @@ __all__: list[str] = [
     "get_flasknova_logger",
     "FileStorage",
     "Headers",
+    "guard"
 ]
