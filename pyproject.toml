@@ -1,5 +1,5 @@
 [project]
-name = "flasknova"
+name = "flask-nova"
 version = "0.2.0"
 description = "Extra check using validators in flask application"
 authors = [
@@ -9,12 +9,12 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "flask>=3.1.3",
+    "flask[async]>=3.1.3",
     "pydantic>=2.13.4",
 ]
 
 [project.scripts]
-flask_nova = "flask_nova:cli"
+flask_nova = "flask_nova.cli:cli"
 
 [dependency-groups]
 dev = [
