@@ -9,11 +9,9 @@ import typing as t
 import asyncio
 import sys
 
-try:
-    # Python 3.13+
-    gil_enabled: bool = sys._is_gil_enabled()
-except AttributeError:
-    gil_enabled = True
+gil_enabled: bool = t.cast(
+    t.Callable[[], bool], getattr(sys, "_is_gil_enabled", lambda: True)
+)()
 
 
 _THREAD_POOL_GUARD: dict[int, t.Any] = {}

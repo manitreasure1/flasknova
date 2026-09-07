@@ -14,7 +14,7 @@ from .exceptions import HTTPException
 from .serializer import Serializer
 from .logger import json_logger
 from .binder import Binder
-from .typed import Method
+from .typed import Method, deprecated
 
 from enum import Enum
 import typing as t
@@ -22,6 +22,8 @@ import warnings
 import logging
 import secrets
 import os
+
+
 
 if t.TYPE_CHECKING:
     from flask.typing import RouteCallable, ResponseReturnValue
@@ -475,13 +477,13 @@ class FlaskNova(_Flask):
         }
         return super().route(rule, methods=["DELETE"], **options)
 
-    @warnings.deprecated(
+    @deprecated(
         "The `option` decorator is deprecated and will be removed in FlaskNova 0.2.x."
         "\nIt no longer has any effect and can be safely removed",
     )
     def options(self, *args, **kwargs): ...
 
-    @warnings.deprecated(
+    @deprecated(
         "The `head` decorator is deprecated and will be removed in FlaskNova 0.2.x."
         "\nIt no longer has any effect and can be safely removed",
     )

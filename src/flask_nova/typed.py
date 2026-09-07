@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing as t
-
+import warnings
 from flask.wrappers import Response
 
 P = t.ParamSpec("P")
@@ -17,6 +17,17 @@ class FileMarker:
         self.name = name
         self.multiple = multiple
         self.description = description
+
+def _deprecated(message: str):
+    def decorator(function):
+        return function
+
+    return decorator
+
+
+deprecated = t.cast(t.Callable[[str], t.Callable[[t.Any], t.Any]], getattr(
+    warnings, "deprecated", _deprecated
+))
 
 
 Method = t.Literal["GET", "POST", "PUT", "DELETE", "PATCH"]

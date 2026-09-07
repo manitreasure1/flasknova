@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from .helpers import __builder___
-
+from .typed import deprecated
 from flask.blueprints import Blueprint as _BluePrint
 import typing as t
-import warnings
 import copy
 import os
 
@@ -218,13 +217,13 @@ class NovaBlueprint(_BluePrint):
         }
         return super().route(rule, methods=["DELETE"], **options)
 
-    @warnings.deprecated(
+    @deprecated(
         "The `option` decorator is deprecated and will be removed in FlaskNova 0.2.x."
         "\nIt no longer has any effect and can be safely removed",
     )
     def options(self, *args, **kwargs) -> None: ...
 
-    @warnings.deprecated(
+    @deprecated(
         "The `head` decorator is deprecated and will be removed in FlaskNova 0.2.x."
         "\nIt no longer has any effect and can be safely removed",
     )
