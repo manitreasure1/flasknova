@@ -777,7 +777,7 @@ class UserResponse(BaseModel):
 
                 <h3>Command</h3>
                 <div class="cli-window">
-                    flask-nova gen --app &lt;your_app_path&gt; [OPTIONS]
+                    flask_nova gen --app &lt;your_app_path&gt; [OPTIONS]
                 </div>
 
                 <h3>Options</h3>
@@ -810,23 +810,23 @@ class UserResponse(BaseModel):
 
                 Generate both HTTP and Python requests:
                 <div class="cli-window">
-                    $ flask-nova gen --app main:app --format all<br>
+                    $ flask_nova gen --app main:app --format all<br>
                     <span class="cli-info">[SCAN]</span> 14 routes detected...<br>
                     <span class="cli-success">[DONE]</span> Created 14 .http requests in ./docs/requests<br>
                     <span class="cli-success">[DONE]</span> Created 14 pytest scripts in ./tests/gen
                 </div>
                 Generate HTTP requests only flag --output path:
                 <div class="cli-window">
-                    $ flask-nova gen --app examples.form_ex:app --format http --rest<br>
+                    $ flask_nova gen --app examples.form_ex:app --format http --rest<br>
                 </div>
                 Generate Python requests only:
                 <div class="cli-window">
-                    $ flask-nova gen --app examples.form_ex:app --format py<br>
+                    $ flask_nova gen --app examples.form_ex:app --format py<br>
                 </div>
             </section>
             <h3>Command</h3>
             <div class="cli-window">
-                flask-nova info --app &lt;your_app_path&gt;
+                flask_nova info --app &lt;your_app_path&gt;
             </div>
             <p> The info command display's a browser summary of your app</p>
 
