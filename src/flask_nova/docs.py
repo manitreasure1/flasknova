@@ -12,10 +12,11 @@ def create_docs_blueprint(app) -> Blueprint:
     - scalar ui
 
     """
+
     docs_bp = Blueprint("docs", __name__)
-    swagger_route: str = app.config.get("FLASKNOVA_SWAGGWER_ROUTE", "/docs")
-    redoc_route: str = app.config.get("FLASKNOVA_REDOC_ROUTE", "/redoc")
-    scalar_route: str = app.config.get("FLASKNOVA_SCALAR_ROUTE", "/scalar")
+    swagger_route = app._default_urls["swagger_route"]
+    redoc_route = app._default_urls["redoc_route"]
+    scalar_route = app._default_urls["scalar_route"]
 
     @docs_bp.get("/openapi.json")
     def openapi_json() -> Response:
