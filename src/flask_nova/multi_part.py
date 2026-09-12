@@ -26,5 +26,10 @@ def Form(type_: type | None = None) -> t.Any:
     return FormMarker(type_)
 
 
-def File(name: str, multiple: bool = False, description: str | None = None) -> t.Any:
-    return FileMarker(name, multiple, description)
+def File(
+    name: str,
+    multiple: bool = False,
+    content_type: str | None = None,
+    description: str | None = None,
+) -> t.Any:
+    return FileMarker(name, multiple, content_type, description)
