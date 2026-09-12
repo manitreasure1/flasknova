@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flask-Nova | File</title>
+    </head>
+
+    <body>
+        <h1>File Request</h1>
+        <p>
+            <!-- <input type="file" id="fileInput"> -->
+            <input type="file" id="fileInput" multiple />
+        </p>
+        <button id="uploadBtn">Upload Files</button>
+        <!-- <p>
+        </p> -->
+
+        <script>
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            uploadBtn.addEventListener('click', async () => {
+                const files = fileInput.files;
+                if (files.length === 0) return;
+
+                const formData = new FormData();
+                for (const file of files) {
+                    formData.append('profiles', file);
+                }
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/upload-profiles', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Upload success:', result);
+                    } else {
+                        console.error('Upload failed');
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                }
+            });
+        </script>
+    </body>
+
+</html>
+
+<!--
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+
+uploadBtn.addEventListener('click', async () => {
+  const files = fileInput.files;
+  if (files.length === 0) return;
+
+  const formData = new FormData();
+
+  // Loop through the list of files and append each to FormData
+  for (const file of files) {
+    formData.append('files', file);
+  }
+
+  try {
+    const response = await fetch('/upload-endpoint', {
+      method: 'POST',
+      body: formData, // The browser automatically sets multipart/form-data
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Upload success:', result);
+    } else {
+      console.error('Upload failed');
+    }
+  } catch (error) {
+    console.error('Network error:', error);
+  }
+}); -->

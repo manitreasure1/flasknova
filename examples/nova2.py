@@ -12,6 +12,7 @@ from flask_nova import (
     File,
     Depend,
     FileStorage,
+    render_template,
 )
 
 
@@ -119,12 +120,12 @@ def upload_profile(
 )
 def upload_profiles(
     profile: list[FileStorage] = File(
-        "profile", description="Users Profile Picture", multiple=True
+        "profiles", description="Users Profile Picture", multiple=True
     )
 ) -> dict[str, str]:
     # Mutiple file upload `argument multiple= True is expected in the File() object`
     for f in profile:
-        f.save("images")
+        print(f.filename)
     return {"message": "Welcome Home!"}
 
 
@@ -165,7 +166,7 @@ def form_str(user: Annotated[str, Form()]) -> dict[str, Any]:
     description="Using Annotation with file object",
     response_model=Home,
 )
-def anno_file(user: Annotated[FileStorage, File("")]) -> dict[str, Any]:
+def anno_file(user: Annotated[FileStorage, File("file")]) -> dict[str, Any]:
     return {"message": "Welcome Home!"}
 
 
@@ -175,7 +176,7 @@ def anno_file(user: Annotated[FileStorage, File("")]) -> dict[str, Any]:
     summary="Dependency Injection",
     description="Scope dependency via Depend",
 )
-def secure_(user=Depend(jwt)):
+def secure_(user=Depend(jwt)) -> dict[str, Any]:
     return {"message": user["msg"]}
 
 
@@ -185,10 +186,17 @@ def secure_(user=Depend(jwt)):
     summary="Dependency Injection",
     description="Scope dependency via Depend",
 )
-async def secure_async(user=Depend(jwt_async)):
+async def secure_async(user=Depend(jwt_async)) -> dict[str, Any]:
     u = await user  # type: ignore
     #  if the dependency is awaitable use await before you can access its values
     return {"message": u["msg"]}
+
+
+@api.get("/query-with-validation")
+def validate_with_field(
+    name: str = Field(max_length=5), age: int = Field(le=10)
+) -> dict[str, str | int]:
+    return {"name": name, "age": age}
 
 
 @api.get(
@@ -207,14 +215,14 @@ def queryreq(id: int, name: str, age: int) -> dict[str, str]:
     summary="User Query",
     description="expect id, name and age from request query obj",
 )
-def queryuser(id: int, name: str, age: int) -> dict[str, str]:
+def queryuser(id: int | None, name: str, age: int) -> dict[str, str]:
     return {"message": f"{id}-{name}-{age}"}
 
 
 @app.get("/author/<int:author_id>/books/<string:genre>/", tags=["author"])
 def author(
-    author: DCAuthor, author_id: int, genre: str, year: int, month
-) -> tuple[DCAuthor, int]:  # alternative use `Literal["201"]`` instead of `int`
+    author: DCAuthor, author_id: int, genre: str, year: int, month=Field()
+) -> tuple[DCAuthor, Literal[201]]:
     """
     The Author Counter
     Author Json and and path param request
@@ -228,6 +236,8 @@ def author(
     summary="Literal status code",
     description="Build openapi spec using the specified Literal value",
     responses={"200": {"Description": "YE"}},
+    additionalOperations={"Cloud-Infra": "GCP"},
+    externalDocs={"url": "http://nova-docs-GCP", "description": "mani h-GCP"},
 )
 def create_student(
     user: BMStudent,
@@ -242,6 +252,9 @@ def create_student(
     tags=["author"],
     summary="Native Response Dispatcher",
     description="Using response object to serialize response type",
+    responses={"200": {"Description": "responses"}},
+    additionalOperations={"Cloud-Service": "Aws"},
+    externalDocs={"url": "http://nova-docs", "description": "mani h"},
 )
 def get_student() -> BMStudent:
     author = BMStudent(name="Mani", gender="male", age="12")
@@ -255,7 +268,7 @@ def get_student() -> BMStudent:
     description="Nothing much to say",
 )
 def create_user(user: BMUser) -> dict[str, Any]:
-    return user.model_dump()  # this is already in dict form
+    return user.model_dump()  # this is already a dict obj and will serialized to json
 
 
 @auth_api.put("/login")
@@ -264,8 +277,14 @@ def login() -> NoReturn:
 
 
 @auth_api.post("/signup")
-def signup(user: AuthUser):
+def signup(user: AuthUser) -> dict[str, str]:
     return {"meg": "Welcome User"}
+
+
+@api.get("/render", response_model=BMStudent)
+def render_():
+    ctx = {"name": "Mani", "age": "12", "gender": "male", "id": 12345}
+    return render_template("index.html", **ctx)
 
 
 @app.post("/log")
@@ -283,5 +302,4 @@ app.register_blueprint(auth_api)
 
 
 if __name__ == "__main__":
-
     app.run(debug=True)

@@ -6,7 +6,7 @@ GET {{base_url}}/address
 null
 
 ###
-GET {{base_url}}/author/books/?year=3325&month=str-obj
+GET {{base_url}}/author/1/books/fable/?year=3325&month=str-obj
 Content-Type: application/json
 
 {
@@ -16,15 +16,16 @@ Content-Type: application/json
 
 ###
 GET {{base_url}}/student
-null
 
+###
+GET {{base_url}}/api/query-with-validation?name=mani&age=12
 ###
 GET {{base_url}}/api/query-req?id=1248&name=str-obj&age=8345
 null
 
 ###
 GET {{base_url}}/api/query-user?id=7558&name=value&age=2833
-null
+
 
 ###
 POST {{base_url}}/
@@ -32,7 +33,7 @@ Content-Type: application/json
 
 {
     "name": "str-obj",
-    "age": "value"
+    "age": "12"
 }
 
 ###
@@ -96,7 +97,7 @@ Content-Type: application/json
 
 {
     "name": "value",
-    "gender": "value",
+    "gender": "male",
     "age": "value"
 }
 
@@ -106,7 +107,7 @@ Content-Type: application/json
 
 {
     "name": "str-obj",
-    "age": "string"
+    "age": "st"
 }
 
 ###
