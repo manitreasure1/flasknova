@@ -7,6 +7,7 @@ from .router import NovaBlueprint
 from .core import FlaskNova
 from .status import status
 from .di import Depend
+from .template import render_template
 
 __all__: list[str] = [
     "FlaskNova",
@@ -21,5 +22,6 @@ __all__: list[str] = [
     "get_flasknova_logger",
     "FileStorage",
     "Headers",
-    "guard"
+    "guard",
+    "render_template",
 ]
