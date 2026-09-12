@@ -4,6 +4,8 @@ from .typed import FileMarker, FormMarker
 from .di import Depend
 
 from pydantic import BaseModel, TypeAdapter
+from types import NoneType, UnionType
+from pydantic.fields import FieldInfo
 from flask.wrappers import Response
 
 from dataclasses import is_dataclass
@@ -75,15 +77,55 @@ def _map_types(
         float: {"type": "number"},
         bool: {"type": "boolean"},
         UUID: {"type": "string", "format": "uuid"},
-        None: "null",
+        NoneType: {"type": "null"},
         list: {"type": "array"},
         set: {"type": "array"},
         dict: "object",
         t.Any: {},
     }
-    if t.get_origin(type_) is t.Union:
+    if t.get_origin(type_) is UnionType:
         return {"anyOf": [_map_types(t) for t in t.get_args(type_)]}
     return map_type.get(type_, {})  # type: ignore[return-value]
+
+
+def param_builder_(
+    f: FieldInfo | None,
+    dt: t.Any,
+    name: str,
+    in_: t.Literal["query", "path"],
+    style: t.Literal["simple", "form"],
+) -> dict[str, t.Any]:
+
+    schema: dict = {"schema": {}}
+    if f:
+        if f.description:
+            schema["description"] = f.description
+        if f.examples:
+            schema["examples"] = f.examples
+        if f.deprecated:
+            schema["deprecated"] = f.deprecated
+
+        for meta in f.metadata:
+            if hasattr(meta, "pattern") and meta.pattern:
+                schema["schema"]["pattern"] = meta.pattern
+            if hasattr(meta, "max_length") and meta.max_length:
+                schema["schema"]["maxLength"] = meta.max_length
+            if hasattr(meta, "min_length") and meta.min_length:
+                schema["schema"]["minLength"] = meta.min_length
+
+    schema["type"] = _map_types(dt)
+    schema["name"] = name
+    schema["in"] = in_
+    schema["style"] = style
+
+    if t.get_origin(dt) and NoneType in t.get_args(dt):
+        schema["required"] = False
+    else:
+        schema["required"] = True
+
+    if not schema["schema"]:
+        schema.pop("schema")
+    return schema
 
 
 def _gen_schema(type_: type | t.Any) -> dict[str, t.Any]:
@@ -176,6 +218,7 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
         res: dict[str, t.Any] | None = meta_obj.pop("response", None)
 
         responses: dict[str, dict[t.Any, t.Any]] | None = meta_obj.get("responses")
+        additionalOperations = meta_obj.pop("additionalOperations", None)
 
         parameters: list[dict[str, t.Any]] = []
         request_body: dict[str, t.Any] = {}
@@ -187,24 +230,24 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
                 match obj["type"]:
                     case "query":
                         parameters.append(
-                            {
-                                "name": param,
-                                "in": "query",
-                                "required": True,
-                                "style": "form",
-                                "schema": _map_types(obj["object"]),
-                                "uniqueItems": True,
-                            }
+                            param_builder_(
+                                obj.get("default"),
+                                obj["object"],
+                                param,
+                                "query",
+                                "form",
+                            )
                         )
                     case "path":
+
                         parameters.append(
-                            {
-                                "name": param,
-                                "in": "path",
-                                "required": True,
-                                "style": "simple",
-                                "schema": _map_types(obj["object"]),
-                            }
+                            param_builder_(
+                                obj.get("default"),
+                                obj["object"],
+                                param,
+                                "path",
+                                "simple",
+                            )
                         )
                     case "basemodel":
                         properties = obj["object"].model_json_schema(
@@ -343,6 +386,10 @@ def __openapi__(open_api_meta: dict[str, t.Any]) -> dict[str, t.Any]:
 
             if parameters:
                 route_spec["paths"][path_key][method.lower()]["parameters"] = parameters
+            if additionalOperations:
+                route_spec["paths"][path_key][
+                    "additionalOperations"
+                ] = additionalOperations
             if request_body:
                 request_body["required"] = True
                 route_spec["paths"][path_key][method.lower()][
@@ -369,7 +416,8 @@ def _request_signature(rule: str, signature: ip.Signature) -> dict[str, t.Any]:
             paths.append(path.split(sep=":")[1])
         else:
             paths.append(path)
-
+    type_ = None
+    default_ = None
     for name, param in signature.parameters.items():
         annotation = param.annotation
         default = param.default
@@ -379,15 +427,22 @@ def _request_signature(rule: str, signature: ip.Signature) -> dict[str, t.Any]:
             type_ = annotation if annotation is not ip._empty else None
             default_ = default if default is not ip._empty else None  # type: ignore[assignment]
         default_ = default_[0] if isinstance(default_, list) else default_
-
-        if name and type_ in (str, int, float, UUID) and not default_:
+        if (
+            name
+            and (type_ in (str, int, float, UUID) or t.get_origin(type_) is UnionType)
+            and not isinstance(default_, (FormMarker, FileMarker, Depend))
+        ):
             if name in paths:
-                pq = {"type": "path", "object": type_}
+                pq = {"type": "path", "object": type_, "default": default_}
             else:
-                pq = {"type": "query", "object": type_}
+                pq = {"type": "query", "object": type_, "default": default_}
             build[name] = pq
-        elif name and not type_ and not default_:
-            build[name] = {"type": "query", "object": str}
+        elif (
+            name
+            and not type_
+            and not isinstance(default_, (FormMarker, FileMarker, Depend))
+        ):
+            build[name] = {"type": "query", "object": str, "default": default_}
         else:
             build[name] = type_builder(
                 type_checker=TypeChecker(annotation=type_, default=default_)
@@ -396,7 +451,7 @@ def _request_signature(rule: str, signature: ip.Signature) -> dict[str, t.Any]:
 
 
 def _response_signature(
-    response_model: type | None, return_type: t.Any
+    response_model: type | None, status_code: int | None, return_type: t.Any
 ) -> dict[str, str | t.Any | None] | dict[str, str | t.Any] | None:
     """Response Meta builder"""
     response = None
@@ -404,6 +459,8 @@ def _response_signature(
     headers = None
 
     if response_model:
+        if status_code:
+            status = status_code
         response = response_model
     elif return_type:
         r_args: tuple[t.Any, ...] = t.get_args(return_type)
@@ -424,6 +481,8 @@ def _response_signature(
                         status = r_args[1].__args__[0]
                 else:
                     response, headers = r_args
+            elif status_code:
+                status = status_code
         else:
             response = return_type
 
@@ -444,7 +503,6 @@ def _response_signature(
 
 
 def _build_schema_cache(
-
     rule: str, view_func: RouteCallable, route_meta: dict[str, t.Any] | None
 ) -> dict[str, dict[str, t.Any]]:
     """
@@ -455,14 +513,16 @@ def _build_schema_cache(
 
     build: dict[str, t.Any] = {}
     response_model: type | None = None
+    status_code: int | None = None
     signature: ip.Signature = ip.signature(view_func)
     return_type = t.get_type_hints(obj=view_func).get("return")
 
     if route_meta:
         response_model = route_meta.get("response_model")
+        status_code = route_meta.get("status_code")
 
     build["request"] = _request_signature(rule, signature)
-    build["response"] = _response_signature(response_model, return_type)
+    build["response"] = _response_signature(response_model, status_code, return_type)
     return build
 
 
@@ -473,7 +533,7 @@ def __builder___(
     options: dict[str, t.Any],
     is_blueprint: bool = False,
 ) -> None:
-    """generate :cls:`FlaskNova` and NovaBlueprint :attr:`_compiled_validators` and :attr:`openapi` schema
+    """generate :attr:`_compiled_validators` and :attr:`openapi` schema for :cls:`FlaskNova` and :cls:`NovaBlueprint`
 
     Args:
         rule: the current url passing trough `add_url_rule`
@@ -490,8 +550,20 @@ def __builder___(
     route_meta: dict[str, t.Any] | None = options.pop("_route_meta", None)
     _static_url_path = self.static_url_path if self.static_url_path else "static"
 
+    tags = []
+    if route_meta and route_meta.get("tags"):
+        tags = route_meta["tags"]
+
+    if is_blueprint and route_meta:
+        tags.append(self.name)
+        if route_meta.get(
+            "tags",
+        ):
+            route_meta["tags"].append(self.name)
+        else:
+            route_meta["tags"] = [self.name]
+
     method = route_meta["methods"] if route_meta else None
-    tags = route_meta.get("tags") if route_meta else []
     servers = route_meta.get("servers") if route_meta else []
 
     schema_cache = _build_schema_cache(rule, view_func, route_meta)
@@ -507,7 +579,6 @@ def __builder___(
                 route_meta.pop(name)
             route_meta = {**route_meta}
         route_meta.pop("response_model", None)
-
         open_api_meta: dict[str, t.Any | dict[str, t.Any]] = {
             **route_meta,
             **schema_cache,
@@ -521,9 +592,10 @@ def __builder___(
 
     docs_url = ["/docs", "/openapi", "/redoc", "/swagger", _static_url_path]
     if not is_blueprint:
-        swagger_url = self.config.get("FLASKNOVA_SWAGGWER_ROUTE", None)
-        redoc_url = self.config.get("FLASKNOVA_REDOC_ROUTE", None)
-        scalar_url = self.config.get("FLASKNOVA_SCALAR_ROUTE", None)
+
+        swagger_url = self._default_urls["swagger_route"]
+        redoc_url = self._default_urls["redoc_route"]
+        scalar_url = self._default_urls["scalar_route"]
 
         if swagger_url:
             docs_url.append(swagger_url)
@@ -557,16 +629,21 @@ def __builder___(
         if route_spec:
             if (
                 self.openapi.get("paths")
-                and self.openapi["paths"].get(rule)
                 and route_spec.get("paths")
+                and self.openapi["paths"].get(rule)
             ):
+                if self.openapi["paths"][rule].get(
+                    "additionalOperations"
+                ) and route_spec["paths"][rule].get("additionalOperations"):
+                    self.openapi["paths"][rule]["additionalOperations"].update(
+                        route_spec["paths"][rule].pop("additionalOperations")
+                    )
                 self.openapi["paths"][rule].update(route_spec["paths"][rule])
 
             elif route_spec.get("paths"):
                 self.openapi.setdefault("paths", {}).update(route_spec["paths"])
 
             if route_spec.get("components"):
-
                 self.openapi.setdefault("components", {"schemas": {}})
 
                 self.openapi["components"]["schemas"].update(
@@ -590,7 +667,6 @@ def __builder_update__(self) -> None:
             _compiled_validators = getattr(blueprint, "_compiled_validators")
             openapi = getattr(blueprint, "openapi")
             for method, method_obj in _compiled_validators.items():
-
                 if method in self._compiled_validators.keys():
                     self._compiled_validators[method].update(method_obj)
                 else:
@@ -623,3 +699,6 @@ def __builder_update__(self) -> None:
                 self.openapi["servers"].extend(openapi["servers"])
             elif openapi.get("servers"):
                 self.openapi["servers"] = openapi["servers"]
+
+
+def native_dispatcher(): ...
