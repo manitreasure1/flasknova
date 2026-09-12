@@ -10,7 +10,8 @@ from .di import Depend
 
 from werkzeug.exceptions import UnsupportedMediaType, BadRequest
 from werkzeug.datastructures import FileStorage
-from pydantic import ValidationError
+from pydantic import ValidationError, TypeAdapter
+from pydantic.fields import FieldInfo
 from flask import Request
 
 
@@ -39,9 +40,9 @@ class Binder:
                 case "basemodel":
                     return obj(**self._json_request())  # type: ignore[misc]
                 case "query":
-                    return self._query_request()
+                    return self._query_request(obj, default)
                 case "path":
-                    return self._path_request()
+                    return self._path_request(obj, default)
                 case "dataclassform":
                     return obj(**self._form_request())  # type: ignore[misc]
                 case "basemodelform":
@@ -69,12 +70,14 @@ class Binder:
                 title="Form Validation Error",
             )
 
-    def _query_request(self) -> str | None:
-        return self.request.args.get(self.field_name)
+    def _query_request(self, obj: type | None, default: type | None) -> str | None:
+        query = self.request.args.get(self.field_name)
+        return self._validate_param(obj, default, query)
 
-    def _path_request(self):
+    def _path_request(self, obj: type | None, default: type | None):
         if self.request.view_args:
-            return self.request.view_args.get(self.field_name)
+            path = self.request.view_args.get(self.field_name)
+            return self._validate_param(obj, default, path)
 
     def _json_request(self) -> dict[t.Any, t.Any]:
         # ! `force=True` handle content type validation
@@ -121,10 +124,18 @@ class Binder:
     def _file_request(
         self,
     ) -> list[FileStorage] | FileStorage | None:
+
         name: str = self.field_obj["default"].name or self.field_name
+        content_type: str = self.field_obj["default"].content_type
         file_obj: list[FileStorage] | FileStorage | None = None
 
-        if not self.request.content_type or not any(
+        if content_type:
+            if not self.request.content_type.startswith(content_type):
+                raise HTTPException(
+                    status_code=status.UNSUPPORTED_MEDIA_TYPE,
+                    detail=f"The endpoint expects `{content_type}` Content-Type, but the request has an incorrect content type.",
+                )
+        elif not self.request.content_type or not any(
             self.request.content_type.startswith(t)
             for t in [
                 "multipart/form-data",
@@ -175,3 +186,19 @@ class Binder:
                 return dep_func()
 
             return resolve_sync()
+
+    def _validate_param(self, obj: type | None, default: type | None, raw_input: t.Any):
+
+        if obj and isinstance(default, FieldInfo):
+            annotated_type = t.Annotated[obj, default] #type: ignore[valid-type]
+            validator = TypeAdapter(annotated_type)
+            try:
+                return validator.validate_python(raw_input)
+            except ValidationError as err:
+                raise HTTPException(
+                    status_code=status.UNPROCESSABLE_ENTITY,
+                    detail=f"Validation Error: {err.errors(include_url=False)}",
+                    title="Parameter Validation Error",
+                )
+        else:
+            return raw_input
