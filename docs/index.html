@@ -366,6 +366,24 @@ def profile():
 @app.get("/download")
 def download():
     return Response("hello", mimetype="text/plain")</code></pre>
+    <h4>Template serialization</h4>
+    <p><code>render_template</code> from flask_nova support template ctx obj serialization</p>
+    <pre><code class="language-python">from flask_nova import render_template
+class DashboardResponse:
+    id: int
+    name: str
+    role: Literal["admin", "user"]
+
+@api.get("/render", response_model=DashboardResponse)
+def admin_dashboard():
+    user = {"name": "Mani", "role": "admin", "id": 12345}
+    return render_template("index.html", **user)
+</code></pre>
+<p>The user context object will be serialized before passing it to the template</p>
+<pre><code class="language-json">{
+    "name": "Mani",
+    "role": "admin"
+}</code></pre>
 
                 <h4 id="req-query-path">Query and path parameters</h4>
                 <p>FlaskNova infers primitive query and path values from function parameters.</p>
@@ -375,6 +393,7 @@ def query_req(id: int, name: str, age: int):
 </code></pre>
                 <p>Path segments like <code>&lt;int:author_id&gt;</code> and query values are both
                     supported in the same handler.</p>
+                <p>support <code>Field</code> from pydantic for validation</p>
 
                 <h4>Custom classes</h4>
                 <div class="note">
@@ -888,6 +907,22 @@ class UserResponse(BaseModel):
                             <strong>Extended route metadata</strong>
                             <br>
                             <strong>Info cli add</strong> to display info about the app
+                        </p>
+                    </li>
+                    <li class="journey-item">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <strong>v0.2.1: Improve features and fixes.</strong>
+                            <span
+                                style="font-size: 0.7rem; background: #efbec8; color: #212d34; padding: 2px 8px; border-radius: 12px; font-weight: 600;">ENHANCEMENT</span>
+                        </div>
+                        <p style="font-size: 0.95rem; margin: 0; color: #475569;">
+                            <ul>
+                                <li>File support <code>content_type</code> for explicit file request</li>
+                                <li><code>status_code</code>, <code>additionalOperations</code>, <code>externalDocs</code> meta added to route decorator</li>
+                                <li>add blueprint name to tags</li>
+                                <li>suppout pydantic <code>Field</code> object for  <em>path</em> and <em>query</em> parameter validation</li>
+                                <li> <code>render_template</code> from  <code>flask_nova</code> support response serialization</li>
+                            </ul>
                         </p>
                     </li>
 

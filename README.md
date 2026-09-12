@@ -66,7 +66,7 @@ if __name__ == "__main__":
 ```
 
 Examples
-- See usage examples and bindings in the repository: [examples/nova2.py](examples/nova2.py#L1).
+- See usage examples and bindings in the repository: [examples/nova2.py](https://github.com/manitreasure1/flasknova/blob/main/examples).
 
 Documentation
 - Full docs and examples: https://manitreasure1.github.io/flasknova
