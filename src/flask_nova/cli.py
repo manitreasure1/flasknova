@@ -58,7 +58,7 @@ def _generate(
 
             body: dict | str | None = None
             content_type: str = ""
-            url = url = re.sub(r"<(?:[^:<>]+:)?([^<>]+)>", r"", original_url)
+            url = re.sub(r"<(?:[^:<>]+:)?([^<>]+)>", r"\1", original_url)
 
             query_param = {}
             _static_url_path: str = (
@@ -66,9 +66,10 @@ def _generate(
             )
 
             docs_url = ["/docs", "/openapi", "/redoc", "/swagger", _static_url_path]
-            swagger_url = app_obj.config.get("FLASKNOVA_SWAGGWER_ROUTE", None)
-            redoc_url = app_obj.config.get("FLASKNOVA_REDOC_ROUTE", None)
-            scalar_url = app_obj.config.get("FLASKNOVA_SCALAR_ROUTE", None)
+            swagger_url = app_obj._default_urls["swagger_route"]
+            redoc_url = app_obj._default_urls["redoc_route"]
+            scalar_url = app_obj._default_urls["scalar_route"]
+
             if swagger_url:
                 docs_url.append(swagger_url)
             if redoc_url:
@@ -113,7 +114,7 @@ def _generate(
                     {
                         "method": method,
                         "body": body,
-                        "url": url.replace("//", "/"),
+                        "url": url,
                         "content_type": content_type,
                         "endpoint": f"{method.lower()}_{re.sub(r'[/{} -]', '_', url.strip('/'))}",
                     }
@@ -295,6 +296,14 @@ def _sys_info(app):
                 json.dumps(openapi["components"]) if openapi.get("components") else "{}"
             )
             blueprints.append(bp)
+
+    # default_openapi = getattr(app, "openapi")
+    # df = {}
+    # default_openapi["paths"]
+
+    # todo: defaults
+    # title = default
+    # url prefix /
     return {
         "versions": versions,
         "config": json.dumps(safe_config),
@@ -1090,7 +1099,3 @@ def info(app) -> None:
         file_url = "file://" + temp_file.name
     click.echo(file_url)
     webbrowser.open(file_url)
-
-
-if __name__ == "__main__":
-    cli()
