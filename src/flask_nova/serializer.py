@@ -18,41 +18,40 @@ class Serializer:
         self.result = result
         self.response = response
 
-    def _base_model(self) -> dict[str, Any]:
-        if isinstance(self.result, dict):
-            v: BaseModel = self.response["object"](**self.result)  # type: ignore[operator]
+    def _base_model(self, is_type: bool) -> dict[str, Any]:
+        if is_type:
+            v:BaseModel = self.response["object"](**self.result.model_dump())  # type: ignore[operator]
         else:
-            v = self.response["object"](**self.result.model_dump())  # type: ignore[operator]
-        rv = v.model_validate(self.result).model_dump()
+            v = self.response["object"](**self.result)  # type: ignore[operator]
+        return v.model_validate(self.result).model_dump()
 
-        return rv
 
-    def _dataclass(self) -> dict[str, Any]:
-        if isinstance(self.result, dict):
-            result = self.response["object"](**self.result)  # type: ignore[operator]
-        else:
+    def _dataclass(self, is_type: bool) -> dict[str, Any]:
+        if is_type:
             result = self._serializer_checker(self.response["object"], asdict(self.result))  # type: ignore
+        else:
+            result = self.response["object"](**self.result)  # type: ignore[operator]
         return result
 
-    def _custom_class(self) -> dict[str, Any]:
-        if isinstance(self.result, dict):
-            result = self.response["object"](**self.result)  # type: ignore[operator]
-        else:
+    def _custom_class(self, is_type: bool) -> dict[str, Any]:
+        if is_type:
             result = self._serializer_checker(
                 self.response["object"],  # type: ignore[arg-type]
                 self.result.__result_values__,  # type: ignore[attr-defined]
             )
+        else:
+            result = self.response["object"](**self.result)  # type: ignore[operator]
         return result
 
-    def serialize(self) -> dict[str, Any] | None: # type: ignore[return]
+    def serialize(self, is_type: bool = False) -> dict[str, Any] | None: # type: ignore[return]
         try:
             match self.response["type"]:
                 case "basemodel":
-                    return self._base_model()
+                    return self._base_model(is_type)
                 case "dataclass":
-                    return self._dataclass()
+                    return self._dataclass(is_type)
                 case "customclass":
-                    return self._custom_class()
+                    return self._custom_class(is_type)
         except ValidationError as e:
             raise HTTPException(
                 status_code=status.INTERNAL_SERVER_ERROR,

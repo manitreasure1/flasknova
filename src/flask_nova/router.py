@@ -7,7 +7,6 @@ import typing as t
 import copy
 import os
 
-
 if t.TYPE_CHECKING:
     from flask.typing import RouteCallable
     from flask.sansio.scaffold import T_route
@@ -68,25 +67,32 @@ class NovaBlueprint(_BluePrint):
     def route(  # type: ignore
         self,
         rule: str,
+        *,
         methods: list[Method] = ["GET"],
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": methods[0],
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
         return super().route(rule, methods=methods, **options)
@@ -94,24 +100,31 @@ class NovaBlueprint(_BluePrint):
     def get(  # type: ignore
         self,
         rule: str,
+        *,
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": "GET",
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
 
@@ -120,99 +133,127 @@ class NovaBlueprint(_BluePrint):
     def post(  # type: ignore
         self,
         rule: str,
+        *,
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
-    ) -> t.Callable[[T_route], T_route]:
+    ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": "POST",
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
         return super().route(rule, methods=["POST"], **options)
 
-    def put(
+    def put(  # type: ignore
         self,
-        rule: str,  # type: ignore
+        rule: str,
+        *,
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": "PUT",
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
         return super().route(rule, methods=["PUT"], **options)
 
-    def patch(
+    def patch(  # type: ignore
         self,
-        rule: str,  # type: ignore
+        rule: str,
+        *,
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": "PATCH",
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
         return super().route(rule, methods=["PATCH"], **options)
 
-    def delete(
+    def delete(  # type: ignore
         self,
-        rule: str,  # type: ignore
+        rule: str,
+        *,
+        status_code: int | None = None,
         tags: list[t.Union[str, Enum]] | None = None,
         summary: str | None = None,
         description: str | None = None,
         servers: list[dict[str, str]] | None = None,
         responses: dict[str, t.Any] | None = None,
         response_model: type | None = None,
+        additionalOperations: dict[str, t.Any] | None = None,
+        externalDocs: dict[str, t.Any] | None = None,
         deprecated: bool = False,
         **options: t.Any,
     ) -> t.Callable[[T_route], T_route] | type:
 
         options["_route_meta"] = {
             "methods": "DELETE",
+            "status_code": status_code,
             "tags": tags,
             "summary": summary,
             "description": description,
             "servers": servers,
             "responses": responses,
             "response_model": response_model,
+            "additionalOperations": additionalOperations,
+            "externalDocs": externalDocs,
             "deprecated": deprecated,
         }
         return super().route(rule, methods=["DELETE"], **options)
