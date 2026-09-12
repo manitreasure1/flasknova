@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## [0.2.0] Latest
+## [0.2.1] Latest
+- File object support `content_type` for explicit file request
+- `status_code` `additionalOperations`, `externalDocs` meta added to route decorator
+- added blueprint name to tags
+- suppout pydantic `Field` object for _path_ and _query_ parameter validation
+- `render_template` from `flask_nova` support response serialization
+
+## [0.2.0]
 ### Configs
 - ANSI_COLOR_JSON_LOG: bool
     - this change the behaviour of flask internal logger from text to RFC 7807 problem detail colorful json log
