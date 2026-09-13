@@ -1,6 +1,6 @@
 [project]
 name = "flask-nova"
-version = "0.2.0"
+version = "0.2.1"
 description = "Extra check using validators in flask application"
 authors = [
     {name = "manitreasure1",email = "manitreasure1@gmail.com"}
