@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - suppout pydantic `Field` object for _path_ and _query_ parameter validation
 - `render_template` from `flask_nova` support response serialization
 
-## [0.2.0]
+## [0.2.0] 2026-10-07
 ### Configs
 - ANSI_COLOR_JSON_LOG: bool
     - this change the behaviour of flask internal logger from text to RFC 7807 problem detail colorful json log
@@ -65,6 +65,10 @@ route method `OPTIONS` and `HEAD` has no behavior
 
 ---
 ## Releases
+[0.2.1](https://pypi.org/project/flask-nova/0.2.1/)
+
+[0.2.0](https://pypi.org/project/flask-nova/0.2.0/)
+
 [0.1.3](https://pypi.org/project/flask-nova/0.1.3/)
 
 [0.1.2](https://pypi.org/project/flask-nova/0.1.2/)
